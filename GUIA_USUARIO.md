@@ -41,3 +41,4 @@ Si tienes el rol de **ADMIN**, verás opciones adicionales:
 
 ---
 *Para soporte técnico adicional, contacta al administrador del sistema.*
+*""""""" Jaime Camarena 2026""""""*
