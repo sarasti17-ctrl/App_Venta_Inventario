@@ -495,9 +495,9 @@ def show_inventory():
                 use_container_width=True, 
                 hide_index=True,
                 column_config={
-                    "cantidad_actual": st.column_config.NumberColumn("Cantidad", format="%,.3f"),
-                    "precio_unitario": st.column_config.NumberColumn("Precio U.", format="$%,.2f"),
-                    "importe": st.column_config.NumberColumn("Importe Total", format="$%,.2f"),
+                    "cantidad_actual": st.column_config.NumberColumn("Cantidad", format=",.3f"),
+                    "precio_unitario": st.column_config.NumberColumn("Precio U.", format="$,.2f"),
+                    "importe": st.column_config.NumberColumn("Importe Total", format="$,.2f"),
                     "codigo_interno": "Código",
                     "descripcion": "Descripción",
                     "categoria_hoja": "Categoría",
