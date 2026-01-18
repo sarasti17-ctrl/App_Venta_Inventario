@@ -1,0 +1,461 @@
+======================================================================
+ANALISIS DEL ARCHIVO DE INVENTARIO
+======================================================================
+
+Archivo: S:\scripts py\Utilerias\+Utilerias\App_Venta_Inventario\src\..\data\Inv_Dic_2025.xlsx
+
+Total de hojas: 14
+
+
+======================================================================
+Hoja 1: Resumen
+======================================================================
+Dimensiones: 17 filas x 4 columnas
+
+Columnas encontradas:
+    1. Unnamed: 0                     | Tipo: object     | Llenos:    15 | Vacios:     2
+       Ejemplos: Almacen, Agujetas / Material activo, Agujetas / Material inactivo
+    2. 2025-06-01 00:00:00            | Tipo: float64    | Llenos:    16 | Vacios:     1
+       Ejemplos: 158274.00249999997, 525808.1499999999, 223244.9199999998
+    3. Metros                         | Tipo: object     | Llenos:     2 | Vacios:    15
+       Ejemplos: 1757, No incluye IVA
+    4. Unnamed: 3                     | Tipo: object     | Llenos:     4 | Vacios:    13
+       Ejemplos: Aprox, No cuento con precios del Dril, No cuento con precios de algun
+
+Primeras 3 filas de ejemplo:
+----------------------------------------------------------------------
+                     Unnamed: 0  2025-06-01 00:00:00 Metros Unnamed: 3
+0                       Almacen          158274.0025    NaN        NaN
+1    Agujetas / Material activo          525808.1500    NaN        NaN
+2  Agujetas / Material inactivo          223244.9200    NaN        NaN
+
+======================================================================
+Hoja 2: Inv_TelaVirgenMov
+======================================================================
+Dimensiones: 45 filas x 6 columnas
+
+Columnas encontradas:
+    1. CÓDIGO                         | Tipo: object     | Llenos:    39 | Vacios:     6
+       Ejemplos: 511, 582, 633
+    2. DESCRIPCIÓN                    | Tipo: object     | Llenos:    39 | Vacios:     6
+       Ejemplos: 511453 AZ25211, 511473 VE27149 CHIVE, 511426 RO23174 BLOODY RED
+    3. METROS                         | Tipo: float64    | Llenos:    41 | Vacios:     4
+       Ejemplos: 108.0, 305.0, 92.0
+    4. PRECIO
+X
+METRO                 | Tipo: float64    | Llenos:    38 | Vacios:     7
+       Ejemplos: 67.89, 81.78, 86.49
+    5. TOTAL                          | Tipo: float64    | Llenos:    40 | Vacios:     5
+       Ejemplos: 7332.12, 20706.45, 6245.88
+    6. PRECIO NO INCLUYE IVA          | Tipo: float64    | Llenos:     0 | Vacios:    45
+
+Primeras 3 filas de ejemplo:
+----------------------------------------------------------------------
+  CÓDIGO                DESCRIPCIÓN  METROS  PRECIO\nX\nMETRO     TOTAL  PRECIO NO INCLUYE IVA
+0    511             511453 AZ25211   108.0             67.89   7332.12                    NaN
+1    511       511473 VE27149 CHIVE   305.0             67.89  20706.45                    NaN
+2    511  511426 RO23174 BLOODY RED    92.0             67.89   6245.88                    NaN
+
+======================================================================
+Hoja 3: Inv_TelaVirgen_SinMov
+======================================================================
+Dimensiones: 181 filas x 7 columnas
+
+Columnas encontradas:
+    1. Unnamed: 0                     | Tipo: object     | Llenos:   179 | Vacios:     2
+       Ejemplos: CÓDIGO, 511, 582
+    2. Unnamed: 1                     | Tipo: object     | Llenos:   179 | Vacios:     2
+       Ejemplos: DESCRIPCIÓN, 511 ROSA PALO41, 511463 VI26054 GRAPE WIND
+    3. Unnamed: 2                     | Tipo: object     | Llenos:   180 | Vacios:     1
+       Ejemplos: METROS
+FISCAL, 41, 79
+    4. Unnamed: 3                     | Tipo: object     | Llenos:    29 | Vacios:   152
+       Ejemplos: METROS
+REAL, 770, 124
+    5. Unnamed: 4                     | Tipo: object     | Llenos:   152 | Vacios:    29
+       Ejemplos: PRECIO
+X
+METROS, 67.89, 79.271
+    6. Unnamed: 5                     | Tipo: object     | Llenos:   181 | Vacios:     0
+       Ejemplos: TOTAL, 2783.4900000000002, 5363.31
+    7. Unnamed: 6                     | Tipo: object     | Llenos:    33 | Vacios:   148
+       Ejemplos: OBS, 2016-02-02 00:00:00, Factura a Luis
+
+Primeras 3 filas de ejemplo:
+----------------------------------------------------------------------
+  Unnamed: 0                 Unnamed: 1      Unnamed: 2    Unnamed: 3         Unnamed: 4 Unnamed: 5 Unnamed: 6
+0     CÓDIGO                DESCRIPCIÓN  METROS\nFISCAL  METROS\nREAL  PRECIO\nX\nMETROS      TOTAL        OBS
+1        511            511 ROSA PALO41              41           NaN              67.89    2783.49        NaN
+2        511  511463 VI26054 GRAPE WIND              79           NaN              67.89    5363.31        NaN
+
+======================================================================
+Hoja 4: TelaNoUtilizable
+======================================================================
+Dimensiones: 21 filas x 7 columnas
+
+Columnas encontradas:
+    1. CÓDIGO                         | Tipo: object     | Llenos:    18 | Vacios:     3
+       Ejemplos: *
+    2. DESCRIPCIÓN                    | Tipo: object     | Llenos:    18 | Vacios:     3
+       Ejemplos: Sintético Grasshopper / Nubuck, Rayas verde / Acopol, Tela AE Gris
+    3. METROS                         | Tipo: float64    | Llenos:    19 | Vacios:     2
+       Ejemplos: 1000.0, 40.0, 196.0
+    4. PRECIO
+X
+METROS                | Tipo: float64    | Llenos:     3 | Vacios:    18
+       Ejemplos: 43.83, 86.49, 79.05
+    5. TOTAL                          | Tipo: float64    | Llenos:    19 | Vacios:     2
+       Ejemplos: 0.0, 1753.1999999999998, 259.46999999999997
+    6. Obervaciones                   | Tipo: object     | Llenos:    18 | Vacios:     3
+       Ejemplos: Daño por humedad / Desintegrac, Con hongo, Mojado / Hongo
+    7. Fecha
+última compra localizada | Tipo: datetime64[ns] | Llenos:     1 | Vacios:    20
+       Ejemplos: 2016-02-02 00:00:00
+
+Primeras 3 filas de ejemplo:
+----------------------------------------------------------------------
+  CÓDIGO                     DESCRIPCIÓN  METROS  PRECIO\nX\nMETROS   TOTAL                       Obervaciones Fecha\núltima compra localizada
+0      *  Sintético Grasshopper / Nubuck  1000.0                NaN     0.0  Daño por humedad / Desintegracion                             NaT
+1      *            Rayas verde / Acopol    40.0              43.83  1753.2                          Con hongo                      2016-02-02
+2      *                    Tela AE Gris   196.0                NaN     0.0                     Mojado / Hongo                             NaT
+
+======================================================================
+Hoja 5: Hulera
+======================================================================
+Dimensiones: 55 filas x 14 columnas
+
+Columnas encontradas:
+    1. Unnamed: 0                     | Tipo: object     | Llenos:    49 | Vacios:     6
+       Ejemplos: Materiales, ANTIOXIDANTE DANOX 1076, ANTIOXIDANTE WINGSTAY
+    2. Unnamed: 1                     | Tipo: object     | Llenos:    48 | Vacios:     7
+       Ejemplos: NOMBRE
+SIMPLE, Antioxidante, Carbonato de calcio micronizad
+    3. Unnamed: 2                     | Tipo: object     | Llenos:    49 | Vacios:     6
+       Ejemplos: CANTIDAD, 50, 0
+    4. Unnamed: 3                     | Tipo: object     | Llenos:    51 | Vacios:     4
+       Ejemplos: COSTO, 9.5, 10
+    5. Unnamed: 4                     | Tipo: object     | Llenos:    49 | Vacios:     6
+       Ejemplos: Unidad, Kg, Litros
+    6. Unnamed: 5                     | Tipo: object     | Llenos:    52 | Vacios:     3
+       Ejemplos: Importe, 8559.5, 0
+    7. Unnamed: 6                     | Tipo: object     | Llenos:    29 | Vacios:    26
+       Ejemplos: OBSERVACIONES, Dólares, Compra noviembre 2022
+    8. Tipo de cambio                 | Tipo: object     | Llenos:    37 | Vacios:    18
+       Ejemplos: ÚLTIMA COMPRA, 2025-11-12 00:00:00, 2025-11-19 00:00:00
+    9. 18.02                          | Tipo: object     | Llenos:    37 | Vacios:    18
+       Ejemplos: PROVEEDOR, FATA, QUIMIPOL
+   10. 2025-12-19 00:00:00            | Tipo: float64    | Llenos:     0 | Vacios:    55
+   11. Banco de Mx                    | Tipo: float64    | Llenos:     0 | Vacios:    55
+   12. Unnamed: 11                    | Tipo: float64    | Llenos:     0 | Vacios:    55
+   13. Unnamed: 12                    | Tipo: float64    | Llenos:     1 | Vacios:    54
+       Ejemplos: 37.0
+   14. Unnamed: 13                    | Tipo: float64    | Llenos:     1 | Vacios:    54
+       Ejemplos: 62.0
+
+Primeras 3 filas de ejemplo:
+----------------------------------------------------------------------
+                Unnamed: 0      Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4 Unnamed: 5     Unnamed: 6       Tipo de cambio      18.02  2025-12-19 00:00:00  Banco de Mx  Unnamed: 11  Unnamed: 12  Unnamed: 13
+0               Materiales  NOMBRE\nSIMPLE   CANTIDAD      COSTO     Unidad    Importe  OBSERVACIONES        ÚLTIMA COMPRA  PROVEEDOR                  NaN          NaN          NaN          NaN          NaN
+1  ANTIOXIDANTE DANOX 1076    Antioxidante         50        9.5         Kg     8559.5        Dólares  2025-11-12 00:00:00       FATA                  NaN          NaN          NaN          NaN          NaN
+2    ANTIOXIDANTE WINGSTAY    Antioxidante          0         10         Kg          0            NaN                  NaN        NaN                  NaN          NaN          NaN          NaN          NaN
+
+======================================================================
+Hoja 6: carga hule
+======================================================================
+Dimensiones: 33 filas x 7 columnas
+
+Columnas encontradas:
+    1. MATERIAL                       | Tipo: object     | Llenos:    30 | Vacios:     3
+       Ejemplos: CALZADORES, PASTA MARCA, PASTA PARA VIVOS
+    2. COLOR                          | Tipo: object     | Llenos:    27 | Vacios:     6
+       Ejemplos: COLORES, BCO LACOSTE, BCO LACOSTE / NUEVO
+    3. 19/12/2025                     | Tipo: float64    | Llenos:    31 | Vacios:     2
+       Ejemplos: 2.0, 3.0, 7.0
+    4. Comentarios                    | Tipo: object     | Llenos:    26 | Vacios:     7
+       Ejemplos: Se realiza en molino, 1 por color (negro, rojo, azul, Pasta de base
+    5. PESO X ROLLO
+(KG)              | Tipo: float64    | Llenos:    28 | Vacios:     5
+       Ejemplos: 90.0, 60.0, 840.0
+    6. total kg                       | Tipo: float64    | Llenos:    12 | Vacios:    21
+       Ejemplos: 180.0, 630.0, 360.0
+    7. OBS                            | Tipo: object     | Llenos:     2 | Vacios:    31
+       Ejemplos: gum, suela calandreada se hace, molino abierto
+
+Primeras 3 filas de ejemplo:
+----------------------------------------------------------------------
+           MATERIAL COLOR  19/12/2025                                    Comentarios  PESO X ROLLO\n(KG)  total kg                                                       OBS
+0        CALZADORES   NaN         2.0                           Se realiza en molino                90.0     180.0                                                       NaN
+1       PASTA MARCA   NaN         2.0                                            NaN                90.0     180.0                                                       NaN
+2  PASTA PARA VIVOS   NaN         3.0  1 por color (negro, rojo, azul rey y natural)                60.0     180.0  gum, suela calandreada se hace a 60 K, en molino abierto
+
+======================================================================
+Hoja 7: Suela Mov
+======================================================================
+Dimensiones: 8 filas x 7 columnas
+
+Columnas encontradas:
+    1. INVENTARIO DE SUELA            | Tipo: object     | Llenos:     7 | Vacios:     1
+       Ejemplos: ESTILO, Dany, Panal
+    2. Unnamed: 1                     | Tipo: object     | Llenos:     7 | Vacios:     1
+       Ejemplos: COLOR, Negro, Blanco viejo
+    3. Unnamed: 2                     | Tipo: object     | Llenos:     7 | Vacios:     1
+       Ejemplos: TALLA, Varias
+    4. Unnamed: 3                     | Tipo: object     | Llenos:     8 | Vacios:     0
+       Ejemplos: CANTIDAD, 129, 435
+    5. Unnamed: 4                     | Tipo: object     | Llenos:     7 | Vacios:     1
+       Ejemplos: PARES/NONES, Pares
+    6. Unnamed: 5                     | Tipo: object     | Llenos:     1 | Vacios:     7
+       Ejemplos: PRECIO
+    7. Unnamed: 6                     | Tipo: object     | Llenos:     2 | Vacios:     6
+       Ejemplos: TOTAL, 0
+
+Primeras 3 filas de ejemplo:
+----------------------------------------------------------------------
+  INVENTARIO DE SUELA  Unnamed: 1 Unnamed: 2 Unnamed: 3   Unnamed: 4 Unnamed: 5 Unnamed: 6
+0               ESTILO      COLOR      TALLA   CANTIDAD  PARES/NONES     PRECIO      TOTAL
+1                 Dany      Negro     Varias        129        Pares        NaN        NaN
+2                Panal      Negro     Varias        435        Pares        NaN        NaN
+
+======================================================================
+Hoja 8: suela sin  mov
+======================================================================
+Dimensiones: 36 filas x 10 columnas
+
+Columnas encontradas:
+    1. Unnamed: 0                     | Tipo: float64    | Llenos:     0 | Vacios:    36
+    2. Unnamed: 1                     | Tipo: object     | Llenos:    34 | Vacios:     2
+       Ejemplos: INVENTARIO DE SUELA , ESTILO, AMERICAN 
+    3. Unnamed: 2                     | Tipo: object     | Llenos:    33 | Vacios:     3
+       Ejemplos: COLOR, BLANCA, AMBAR
+    4. Unnamed: 3                     | Tipo: object     | Llenos:    33 | Vacios:     3
+       Ejemplos: TALLA, DAMA, VARIAS
+    5. Unnamed: 4                     | Tipo: object     | Llenos:    34 | Vacios:     2
+       Ejemplos: CANTIDAD, 1775, 0
+    6. Unnamed: 5                     | Tipo: object     | Llenos:    33 | Vacios:     3
+       Ejemplos: PARES/NONES, PARES, PARES 
+    7. Unnamed: 6                     | Tipo: object     | Llenos:    33 | Vacios:     3
+       Ejemplos: STATUS, SIN MOVIMIENTO
+    8. Unnamed: 7                     | Tipo: object     | Llenos:     4 | Vacios:    32
+       Ejemplos: PRECIO, 19.6
+    9. Unnamed: 8                     | Tipo: object     | Llenos:    34 | Vacios:     2
+       Ejemplos: TOTAL, 0, 99352.40000000001
+   10. Unnamed: 9                     | Tipo: object     | Llenos:     5 | Vacios:    31
+       Ejemplos: OBS, Eliminacion de material // 895, Eliminacion de material // 290
+
+Primeras 3 filas de ejemplo:
+----------------------------------------------------------------------
+   Unnamed: 0            Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4   Unnamed: 5 Unnamed: 6 Unnamed: 7 Unnamed: 8 Unnamed: 9
+0         NaN                   NaN        NaN        NaN        NaN          NaN        NaN        NaN        NaN        NaN
+1         NaN  INVENTARIO DE SUELA         NaN        NaN        NaN          NaN        NaN        NaN        NaN        NaN
+2         NaN                ESTILO      COLOR      TALLA   CANTIDAD  PARES/NONES     STATUS     PRECIO      TOTAL        OBS
+
+======================================================================
+Hoja 9: Almacén_MateriaPrima
+======================================================================
+Dimensiones: 140 filas x 6 columnas
+
+Columnas encontradas:
+    1. Unnamed: 0                     | Tipo: object     | Llenos:   139 | Vacios:     1
+       Ejemplos: INVENTARIO, CANDADO 28 mm, CANDADO 31 mm
+    2. Tipo de cambio                 | Tipo: object     | Llenos:   139 | Vacios:     1
+       Ejemplos: 19/12/2025, 7.5, 12.5
+    3. 18.02                          | Tipo: object     | Llenos:   139 | Vacios:     1
+       Ejemplos: PRECIO, 76, 85
+    4. 2025-12-19 00:00:00            | Tipo: object     | Llenos:   139 | Vacios:     1
+       Ejemplos: UNIDAD, x MILLAR, X CAJA (5'000 piezas)
+    5. Banco de Mx                    | Tipo: object     | Llenos:   140 | Vacios:     0
+       Ejemplos: Importe, 570, 950
+    6. PRECIO NO INCLUYE IVA          | Tipo: object     | Llenos:    10 | Vacios:   130
+       Ejemplos: OBSERVACIONES, El precio por millar de este m, *REVISAR / No se encuentran
+
+Primeras 3 filas de ejemplo:
+----------------------------------------------------------------------
+      Unnamed: 0 Tipo de cambio   18.02 2025-12-19 00:00:00 Banco de Mx PRECIO NO INCLUYE IVA
+0     INVENTARIO     19/12/2025  PRECIO              UNIDAD     Importe         OBSERVACIONES
+1  CANDADO 28 mm            7.5      76            x MILLAR         570                   NaN
+2  CANDADO 31 mm           12.5      76            x MILLAR         950                   NaN
+
+======================================================================
+Hoja 10: Caja Individual
+======================================================================
+Dimensiones: 57 filas x 8 columnas
+
+Columnas encontradas:
+    1. CODIGO                         | Tipo: object     | Llenos:    52 | Vacios:     5
+       Ejemplos: 7047, 7096, 7022
+    2. MARCA                          | Tipo: object     | Llenos:    52 | Vacios:     5
+       Ejemplos: AIRWALK, BLANX, COLLEC
+    3. MEDIDA                         | Tipo: object     | Llenos:    52 | Vacios:     5
+       Ejemplos: 1, 15 / 17½, 18 / 21
+    4. INV
+FISCAL                     | Tipo: object     | Llenos:    54 | Vacios:     3
+       Ejemplos: 255, 450, 2250
+    5. INV
+REAL                       | Tipo: float64    | Llenos:    52 | Vacios:     5
+       Ejemplos: 255.0, 450.0, 2250.0
+    6. Costo 
+Unitario                | Tipo: float64    | Llenos:    54 | Vacios:     3
+       Ejemplos: 8.66, 8.7, 3.6
+    7. Importe                        | Tipo: float64    | Llenos:    53 | Vacios:     4
+       Ejemplos: 2208.3, 3914.9999999999995, 8100.0
+    8. OBS                            | Tipo: object     | Llenos:    10 | Vacios:    47
+       Ejemplos: Sin costo, Caja desde 2018, Blanx - abril 2022
+
+Primeras 3 filas de ejemplo:
+----------------------------------------------------------------------
+  CODIGO    MARCA    MEDIDA INV\nFISCAL  INV\nREAL  Costo \nUnitario  Importe  OBS
+0   7047  AIRWALK         1         255      255.0              8.66   2208.3  NaN
+1   7096    BLANX         1         450      450.0              8.70   3915.0  NaN
+2   7022   COLLEC  15 / 17½        2250     2250.0              3.60   8100.0  NaN
+
+======================================================================
+Hoja 11: Agujeta
+======================================================================
+Dimensiones: 168 filas x 10 columnas
+
+Columnas encontradas:
+    1. MATERIAL                       | Tipo: object     | Llenos:   162 | Vacios:     6
+       Ejemplos: AGUJETA ALG, AGUJETA AME F3, AGUJETA AMERICANA
+    2. MARCA                          | Tipo: object     | Llenos:    91 | Vacios:    77
+       Ejemplos: SUPERGA, DC, LACOSTE
+    3. CODIGO                         | Tipo: float64    | Llenos:   139 | Vacios:    29
+       Ejemplos: 6162.0, 6154.0, 6171.0
+    4. MEDIDA                         | Tipo: float64    | Llenos:   162 | Vacios:     6
+       Ejemplos: 95.0, 105.0, 90.0
+    5. COLOR                          | Tipo: object     | Llenos:   162 | Vacios:     6
+       Ejemplos: AMARILLO, AZURE LT, BEIGE ALMOND
+    6. CANTIDAD
+FISCAL                | Tipo: object     | Llenos:   164 | Vacios:     4
+       Ejemplos: 91, 44, 792
+    7. CANTIDAD
+REAL                  | Tipo: float64    | Llenos:   146 | Vacios:    22
+       Ejemplos: 91.0, 44.0, 2090.0
+    8. Costo                          | Tipo: float64    | Llenos:   162 | Vacios:     6
+       Ejemplos: 2.62, 1.98, 2.09
+    9.  Importe                       | Tipo: float64    | Llenos:   166 | Vacios:     2
+       Ejemplos: 238.42000000000002, 115.28, 4138.2
+   10. OBS                            | Tipo: object     | Llenos:     3 | Vacios:   165
+       Ejemplos: Factura a Luis
+
+Primeras 3 filas de ejemplo:
+----------------------------------------------------------------------
+     MATERIAL     MARCA  CODIGO  MEDIDA     COLOR CANTIDAD\nFISCAL  CANTIDAD\nREAL  Costo    Importe              OBS
+0  AGUJETA ALG  SUPERGA  6162.0    95.0  AMARILLO               91            91.0    2.62     238.42             NaN
+1  AGUJETA ALG  SUPERGA  6154.0   105.0  AMARILLO               44            44.0    2.62     115.28             NaN
+2  AGUJETA ALG  SUPERGA  6171.0    95.0  AZURE LT              792          2090.0    1.98    4138.20  Factura a Luis
+
+======================================================================
+Hoja 12: Caja_Embarque
+======================================================================
+Dimensiones: 48 filas x 12 columnas
+
+Columnas encontradas:
+    1. Unnamed: 0                     | Tipo: object     | Llenos:    24 | Vacios:    24
+       Ejemplos: # Material, 7030, 7052
+    2. Unnamed: 1                     | Tipo: object     | Llenos:    44 | Vacios:     4
+       Ejemplos: Proveedor, Imagen en Cartón, CartoEmpaques
+    3. Unnamed: 2                     | Tipo: object     | Llenos:    45 | Vacios:     3
+       Ejemplos: CAJA, AE-12P, ES2
+    4. Unnamed: 3                     | Tipo: object     | Llenos:    34 | Vacios:    14
+       Ejemplos: MEDIDAS, 42*40*37.8, 44*42*30
+    5. Unnamed: 4                     | Tipo: object     | Llenos:    45 | Vacios:     3
+       Ejemplos: COSTO, 18.37, 26.89
+    6. PRECIO NO INCLUYE IVA          | Tipo: object     | Llenos:    45 | Vacios:     3
+       Ejemplos: USADA EN:, Ae Niña (AEK), cajas combinada, AE CABALLERO1 ó Combinadas (ca
+    7. Unnamed: 6                     | Tipo: object     | Llenos:    40 | Vacios:     8
+       Ejemplos: 01/06/2025, 134, 0
+    8. Unnamed: 7                     | Tipo: object     | Llenos:     1 | Vacios:    47
+       Ejemplos: 19/12/2026
+    9. Unnamed: 8                     | Tipo: object     | Llenos:    45 | Vacios:     3
+       Ejemplos: Prs/Caja, 12, 6
+   10. Unnamed: 9                     | Tipo: object     | Llenos:    46 | Vacios:     2
+       Ejemplos: En Pares, 1608, 0
+   11. Unnamed: 10                    | Tipo: object     | Llenos:    45 | Vacios:     3
+       Ejemplos: Importe, 2461.58, 0
+   12. Unnamed: 11                    | Tipo: object     | Llenos:    10 | Vacios:    38
+       Ejemplos: OBS, Utilizada para 2das Vans, YA NO SE UTILIZA
+
+Primeras 3 filas de ejemplo:
+----------------------------------------------------------------------
+   Unnamed: 0        Unnamed: 1 Unnamed: 2 Unnamed: 3 Unnamed: 4                        PRECIO NO INCLUYE IVA  Unnamed: 6  Unnamed: 7 Unnamed: 8 Unnamed: 9 Unnamed: 10 Unnamed: 11
+0         NaN               NaN        NaN        NaN        NaN                                          NaN         NaN         NaN        NaN        NaN         NaN         NaN
+1  # Material         Proveedor       CAJA    MEDIDAS      COSTO                                    USADA EN:  01/06/2025  19/12/2026   Prs/Caja   En Pares     Importe         OBS
+2         NaN  Imagen en Cartón     AE-12P        NaN      18.37  Ae Niña (AEK), cajas combinadas 18/21 y 2/5         134         NaN         12       1608     2461.58         NaN
+
+======================================================================
+Hoja 13: Etiquetas
+======================================================================
+Dimensiones: 41 filas x 10 columnas
+
+Columnas encontradas:
+    1. Descripción                    | Tipo: object     | Llenos:    38 | Vacios:     3
+       Ejemplos: Etiqueta Colgante Superga, Sticker Superga, Etiqueta suela Superga
+    2. No. Ref                        | Tipo: object     | Llenos:    25 | Vacios:    16
+       Ejemplos: HT-3537 V1, HT-3492 V1, ST-3491 20*60 MM
+    3. Imagen                         | Tipo: float64    | Llenos:     0 | Vacios:    41
+    4. Inventario
+19.12.25
+(pzs)      | Tipo: float64    | Llenos:    39 | Vacios:     2
+       Ejemplos: 11505.0, 21499.0, 25960.0
+    5. Tipo                           | Tipo: object     | Llenos:    38 | Vacios:     3
+       Ejemplos: Importación, Nacional
+    6. Costo x pieza                  | Tipo: float64    | Llenos:    38 | Vacios:     3
+       Ejemplos: 0.7, 1.0, 0.11
+    7. Total                          | Tipo: float64    | Llenos:    39 | Vacios:     2
+       Ejemplos: 8053.499999999999, 21499.0, 2855.6
+    8. TIPO DE STOCK                  | Tipo: object     | Llenos:    38 | Vacios:     3
+       Ejemplos: OBSOLETO, UTILIZABLE, Revisar posible venta
+    9. OBS                            | Tipo: object     | Llenos:    11 | Vacios:    30
+       Ejemplos: No se utiliza porque nos la ma, Sin costo por reposición
+Mal i, Etiquetas extras, sólo cobraro
+   10. Precios NO incluyen IVA        | Tipo: float64    | Llenos:     0 | Vacios:    41
+
+Primeras 3 filas de ejemplo:
+----------------------------------------------------------------------
+                 Descripción No. Ref  Imagen  Inventario\n19.12.25\n(pzs)         Tipo  Costo x pieza    Total TIPO DE STOCK                                                             OBS  Precios NO incluyen IVA
+0  Etiqueta Colgante Superga     NaN     NaN                      11505.0  Importación           0.70   8053.5      OBSOLETO                                                             NaN                      NaN
+1            Sticker Superga     NaN     NaN                      21499.0  Importación           1.00  21499.0      OBSOLETO                                                             NaN                      NaN
+2     Etiqueta suela Superga     NaN     NaN                      25960.0  Importación           0.11   2855.6      OBSOLETO  No se utiliza porque nos la mandaron con descripción de "piel"                      NaN
+
+======================================================================
+Hoja 14: Factura Luis Felipe
+======================================================================
+Dimensiones: 46 filas x 14 columnas
+
+Columnas encontradas:
+    1. DESCRIPCIÓN                    | Tipo: object     | Llenos:    30 | Vacios:    16
+       Ejemplos: Lona B12 AZURE LT, Lona B12 BEIGE ALMOND, Lona B12 BLANCO
+    2. PRECIO
+X
+METROS                | Tipo: object     | Llenos:    27 | Vacios:    19
+       Ejemplos: 162.55, 143.9, Costo 
+    3. METROS                         | Tipo: object     | Llenos:    27 | Vacios:    19
+       Ejemplos: 100, 74, 700
+    4. TOTAL                          | Tipo: object     | Llenos:    30 | Vacios:    16
+       Ejemplos: 16255.000000000002, 12028.7, 100730
+    5. IVA                            | Tipo: object     | Llenos:    27 | Vacios:    19
+       Ejemplos: 2600.8, 1924.592, 16116.800000000001
+    6. TOTAL.1                        | Tipo: object     | Llenos:    29 | Vacios:    17
+       Ejemplos: 18855.800000000003, 13953.292000000001, 116846.8
+    7. Unnamed: 6                     | Tipo: float64    | Llenos:     6 | Vacios:    40
+       Ejemplos: 231490.06399999998, 5591.2, 7570.45
+    8. Unnamed: 7                     | Tipo: float64    | Llenos:     0 | Vacios:    46
+    9. Unnamed: 8                     | Tipo: float64    | Llenos:     0 | Vacios:    46
+   10. Unnamed: 9                     | Tipo: float64    | Llenos:     0 | Vacios:    46
+   11. Unnamed: 10                    | Tipo: float64    | Llenos:     0 | Vacios:    46
+   12. Unnamed: 11                    | Tipo: float64    | Llenos:     0 | Vacios:    46
+   13. Unnamed: 12                    | Tipo: object     | Llenos:     1 | Vacios:    45
+       Ejemplos: TOTAL FACTURA
+   14. Unnamed: 13                    | Tipo: object     | Llenos:     2 | Vacios:    44
+       Ejemplos:         307,006 , 356126.5
+
+Primeras 3 filas de ejemplo:
+----------------------------------------------------------------------
+             DESCRIPCIÓN PRECIO\nX\nMETROS METROS    TOTAL       IVA    TOTAL.1  Unnamed: 6  Unnamed: 7  Unnamed: 8  Unnamed: 9  Unnamed: 10  Unnamed: 11 Unnamed: 12 Unnamed: 13
+0      Lona B12 AZURE LT            162.55    100  16255.0    2600.8    18855.8         NaN         NaN         NaN         NaN          NaN          NaN         NaN         NaN
+1  Lona B12 BEIGE ALMOND            162.55     74  12028.7  1924.592  13953.292         NaN         NaN         NaN         NaN          NaN          NaN         NaN         NaN
+2        Lona B12 BLANCO             143.9    700   100730   16116.8   116846.8         NaN         NaN         NaN         NaN          NaN          NaN         NaN         NaN
+
+======================================================================
+Analisis completado
+======================================================================
