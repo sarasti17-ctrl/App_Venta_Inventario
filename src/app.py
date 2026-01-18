@@ -489,15 +489,19 @@ def show_inventory():
         conn.close()
         
         if not df.empty:
+            # Convertir decimales a flotantes para evitar errores de renderizado
+            for col in ['cantidad_actual', 'precio_unitario', 'importe']:
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+
             # Formatear columnas para mejor visualización
             st.dataframe(
                 df, 
                 use_container_width=True, 
                 hide_index=True,
                 column_config={
-                    "cantidad_actual": st.column_config.NumberColumn("Cantidad", format=",.3f"),
-                    "precio_unitario": st.column_config.NumberColumn("Precio U.", format="$,.2f"),
-                    "importe": st.column_config.NumberColumn("Importe Total", format="$,.2f"),
+                    "cantidad_actual": st.column_config.NumberColumn("Cantidad", format="%.3f"),
+                    "precio_unitario": st.column_config.NumberColumn("Precio U.", format="$%.2f"),
+                    "importe": st.column_config.NumberColumn("Importe Total", format="$%.2f"),
                     "codigo_interno": "Código",
                     "descripcion": "Descripción",
                     "categoria_hoja": "Categoría",
