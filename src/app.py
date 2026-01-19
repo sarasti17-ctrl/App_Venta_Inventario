@@ -508,6 +508,19 @@ def show_inventory():
                     "unidad_medida": "Unidad"
                 }
             )
+
+            # Mostrar Totales
+            st.divider()
+            total_cantidad = df['cantidad_actual'].sum()
+            total_importe = df['importe'].sum()
+            
+            t_col1, t_col2, t_col3 = st.columns([1, 1, 1])
+            with t_col1:
+                st.metric("Total Registros", len(df))
+            with t_col2:
+                st.metric("Total Cantidad", f"{total_cantidad:,.3f}")
+            with t_col3:
+                st.metric("Total Importe", f"${total_importe:,.2f}")
         else:
             st.warning("No se encontraron resultados")
 
@@ -684,7 +697,7 @@ def show_sales_form():
                 telefono = st.text_input("Teléfono")
                 email = st.text_input("Email")
             with col2:
-                forma_pago = st.selectbox("Forma de Pago", ["EFECTIVO", "TRANSFERENCIA", "TARJETA", "OTRO"])
+                forma_pago = st.selectbox("Forma de Pago", ["EFECTIVO", "TRANSFERENCIA", "TARJETA", "DEVOLUCIÓN"])
                 descuento = st.slider("Descuento Global (%)", 0, 100, 0)
                 condiciones = st.text_area("Condiciones / Observaciones")
             
