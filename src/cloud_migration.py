@@ -81,11 +81,11 @@ def subu_migracion():
                         if pd.isna(row.get('MARCA')): continue
                         cursor.execute(
                             "INSERT INTO materiales (codigo_interno, descripcion, categoria_hoja, cantidad_actual, unidad_medida, precio_unitario) VALUES (%s, %s, %s, %s, %s, %s)",
-                            (get_clean_str(row.get('CODIGO'), f"CJ-{uuid.uuid4().hex[:6]}"), f"Caja {row.get('MARCA')}", sheet, get_clean_float(row.get('INV\nREAL')), 'Piezas', get_clean_float(row.get('Costo \nUnitario')))
+                            (get_clean_str(row.get('CODIGO'), f"CJ-{uuid.uuid4().hex[:6]}"), f"Caja {row.get('MARCA')}", sheet, get_clean_float(row.get('CANTIDAD', row.get('INV\nREAL'))), 'Piezas', get_clean_float(row.get('Costo \nUnitario')))
                         )
                         total += 1
                 elif sheet == "Inv_TelaVirgen_SinMov":
-                    df = pd.read_excel(excel_file, sheet, skiprows=1)
+                    df = pd.read_excel(excel_file, sheet)
                     for _, row in df.iterrows():
                         if pd.isna(row.get('DESCRIPCIÓN')): continue
                         cursor.execute(
@@ -108,7 +108,7 @@ def subu_migracion():
                         if pd.isna(row.get('MATERIAL')): continue
                         cursor.execute(
                             "INSERT INTO materiales (codigo_interno, descripcion, categoria_hoja, cantidad_actual, unidad_medida, precio_unitario) VALUES (%s, %s, %s, %s, %s, %s)",
-                            (get_clean_str(row.get('CODIGO'), uuid.uuid4().hex[:6]), get_clean_str(row.get('MATERIAL')), sheet, get_clean_float(row.get('CANTIDAD\nREAL')), 'Pares', get_clean_float(row.get('Costo')))
+                            (get_clean_str(row.get('CODIGO'), uuid.uuid4().hex[:6]), get_clean_str(row.get('MATERIAL')), sheet, get_clean_float(row.get('CANTIDAD', row.get('CANTIDAD\nREAL'))), 'Pares', get_clean_float(row.get('Costo')))
                         )
                         total += 1
                 elif sheet == "Suela Mov":
@@ -128,8 +128,8 @@ def subu_migracion():
                         mat = row.get('MATERIAL')
                         if pd.isna(mat) or str(mat).strip() in ["", "MATERIAL"]: continue
                         cursor.execute(
-                            "INSERT INTO materiales (codigo_interno, descripcion, categoria_hoja, cantidad_actual, unidad_medida, color) VALUES (%s, %s, %s, %s, %s, %s)",
-                            (f"CH-{uuid.uuid4().hex[:6]}", f"{mat}", sheet, get_clean_float(row.iloc[2]), 'Kg', get_clean_str(row.get('COLOR')))
+                            "INSERT INTO materiales (codigo_interno, descripcion, categoria_hoja, cantidad_actual, unidad_medida, precio_unitario, color, observaciones) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                            (f"CH-{uuid.uuid4().hex[:6]}", f"{mat}", sheet, get_clean_float(row.iloc[2]), 'Kg', get_clean_float(row.iloc[7]), get_clean_str(row.get('COLOR')), get_clean_str(row.iloc[6]))
                         )
                         total += 1
                 elif sheet == "Almacén_MateriaPrima":
@@ -137,19 +137,46 @@ def subu_migracion():
                     for _, row in df.iterrows():
                         inv = row.iloc[0]
                         if pd.isna(inv) or str(inv).strip() in ["", "INVENTARIO"]: continue
+                        
+                        # Mapeo Explícito: [0] INVENTARIO, [1] CANTIDAD, [2] PRECIO, [3] UNIDAD, [5] OBSERVACIONES
+                        cant = get_clean_float(row.iloc[1])
+                        prec = get_clean_float(row.iloc[2])
+                        unid = get_clean_str(row.iloc[3], "Pzas", max_len=20)
+                        obs = get_clean_str(row.iloc[5])
+                        
                         cursor.execute(
-                            "INSERT INTO materiales (codigo_interno, descripcion, categoria_hoja, cantidad_actual, unidad_medida, precio_unitario) VALUES (%s, %s, %s, %s, %s, %s)",
-                            (f"AMP-{uuid.uuid4().hex[:6]}", str(inv), sheet, get_clean_float(row.iloc[1]), get_clean_str(row.iloc[3], "Pzas", max_len=20), get_clean_float(row.iloc[2]))
+                            "INSERT INTO materiales (codigo_interno, descripcion, categoria_hoja, cantidad_actual, unidad_medida, precio_unitario, observaciones) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                            (f"AMP-{uuid.uuid4().hex[:6]}", str(inv), sheet, cant, unid, prec, obs)
+                        )
+                        total += 1
+                elif sheet == "suela sin  mov":
+                    df = pd.read_excel(excel_file, sheet, skiprows=2)
+                    for _, row in df.iterrows():
+                        estilo = row.iloc[1]
+                        if pd.isna(estilo) or str(estilo).strip() in ["ESTILO", ""]: continue
+                        cursor.execute(
+                            "INSERT INTO materiales (codigo_interno, descripcion, categoria_hoja, propiedad, cantidad_actual, unidad_medida, precio_unitario, color, medida, observaciones) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                            (f"SUE-SM-{uuid.uuid4().hex[:6]}", f"Suela {estilo}", sheet, 'Sin Movimiento', get_clean_float(row.iloc[4]), 'Pares', get_clean_float(row.iloc[7]), get_clean_str(row.iloc[2]), get_clean_str(row.iloc[3]), get_clean_str(row.iloc[9]))
+                        )
+                        total += 1
+                elif sheet == "Etiquetas":
+                    df = pd.read_excel(excel_file, sheet)
+                    for _, row in df.iterrows():
+                        desc = row.get('Descripción')
+                        if pd.isna(desc) or str(desc).strip() in ["", "Descripción"]: continue
+                        cursor.execute(
+                            "INSERT INTO materiales (codigo_interno, descripcion, categoria_hoja, cantidad_actual, unidad_medida, precio_unitario, observaciones) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                            (get_clean_str(row.get('No. Ref'), f"ETI-{uuid.uuid4().hex[:6]}"), str(desc), sheet, get_clean_float(row.iloc[3]), 'Piezas', get_clean_float(row.iloc[5]), get_clean_str(row.get('OBS')))
                         )
                         total += 1
                 elif sheet == "Caja_Embarque":
-                    df = pd.read_excel(excel_file, sheet, skiprows=2)
+                    df = pd.read_excel(excel_file, sheet, skiprows=1)
                     for _, row in df.iterrows():
                         caja = row.iloc[2]
                         if pd.isna(caja) or str(caja).strip() in ["", "CAJA"]: continue
                         cursor.execute(
-                            "INSERT INTO materiales (codigo_interno, descripcion, categoria_hoja, cantidad_actual, unidad_medida, precio_unitario) VALUES (%s, %s, %s, %s, %s, %s)",
-                            (get_clean_str(row.iloc[0], f"CJE-{uuid.uuid4().hex[:6]}"), f"Caja {caja}", sheet, get_clean_float(row.iloc[6]), 'Piezas', get_clean_float(row.iloc[4]))
+                            "INSERT INTO materiales (codigo_interno, descripcion, categoria_hoja, cantidad_actual, unidad_medida, precio_unitario, proveedor, medida, observaciones) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                            (get_clean_str(row.iloc[0], f"CJE-{uuid.uuid4().hex[:6]}"), f"Caja {caja}", sheet, get_clean_float(row.iloc[6]), 'Piezas', get_clean_float(row.iloc[4]), get_clean_str(row.iloc[1]), get_clean_str(row.iloc[3]), get_clean_str(row.iloc[10]))
                         )
                         total += 1
             except Exception as e_sheet:

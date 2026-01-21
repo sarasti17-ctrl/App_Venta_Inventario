@@ -98,7 +98,7 @@ def migrar_datos():
         # 2. Hoja: Inv_TelaVirgen_SinMov
         if "Inv_TelaVirgen_SinMov" in excel_file.sheet_names:
             print("Procesando Inv_TelaVirgen_SinMov...")
-            df = pd.read_excel(excel_file, "Inv_TelaVirgen_SinMov", skiprows=1) # Saltar cabecera
+            df = pd.read_excel(excel_file, "Inv_TelaVirgen_SinMov") # Eliminar skiprows=1
             for _, row in df.iterrows():
                 if pd.isna(row.get('DESCRIPCIÓN')): continue
                 
@@ -191,7 +191,7 @@ def migrar_datos():
                     codigo,
                     f"Caja Individual {clean_val(row.get('MARCA'))}",
                     'Caja Individual',
-                    float(row.get('INV\nREAL', 0)) if not pd.isna(row.get('INV\nREAL')) else 0,
+                    float(row.get('CANTIDAD', 0)) if not pd.isna(row.get('CANTIDAD')) else 0,
                     'Piezas',
                     float(row.get('Costo \nUnitario', 0)) if not pd.isna(row.get('Costo \nUnitario')) else 0,
                     clean_val(row.get('MARCA')),
@@ -216,7 +216,7 @@ def migrar_datos():
                     codigo,
                     clean_val(row.get('MATERIAL')),
                     'Agujeta',
-                    float(row.get('CANTIDAD\nREAL', 0)) if not pd.isna(row.get('CANTIDAD\nREAL')) else 0,
+                    float(row.get('CANTIDAD', 0)) if not pd.isna(row.get('CANTIDAD')) else 0,
                     'Pares',
                     float(row.get('Costo', 0)) if not pd.isna(row.get('Costo')) else 0,
                     clean_val(row.get('MARCA')),
@@ -315,13 +315,15 @@ def migrar_datos():
             df = pd.read_excel(excel_file, "Almacén_MateriaPrima", skiprows=1)
             for _, row in df.iterrows():
                 inv = row.iloc[0] # INVENTARIO
-                if pd.isna(inv) or str(inv).strip() == "" or str(inv).strip() == "INVENTARIO": continue
+                if pd.isna(inv) or str(inv).strip() in ["", "INVENTARIO"]: continue
                 
+                # Mapeo Explícito según estructura confirmada:
+                # [0] INVENTARIO, [1] CANTIDAD, [2] PRECIO, [3] UNIDAD, [5] OBSERVACIONES
                 codigo = f"AMP-{uuid.uuid4().hex[:6]}"
-                cant = row.iloc[1] # 19/12/2025
-                prec = row.iloc[2] # PRECIO
-                unid = row.iloc[3] # UNIDAD
-                obs = row.iloc[5]  # OBSERVACIONES
+                cant = row.iloc[1] 
+                prec = row.iloc[2]
+                unid = row.iloc[3]
+                obs = row.iloc[5]
                 
                 sql = "INSERT INTO materiales (codigo_interno, descripcion, categoria_hoja, cantidad_actual, unidad_medida, precio_unitario, observaciones) VALUES (%s, %s, %s, %s, %s, %s, %s)"
                 values = (
@@ -339,7 +341,7 @@ def migrar_datos():
         # 11. Hoja: Caja_Embarque
         if "Caja_Embarque" in excel_file.sheet_names:
             print("Procesando Caja_Embarque...")
-            df = pd.read_excel(excel_file, "Caja_Embarque", skiprows=2)
+            df = pd.read_excel(excel_file, "Caja_Embarque", skiprows=1)
             for _, row in df.iterrows():
                 prov = row.iloc[1] # Proveedor
                 caja = row.iloc[2] # CAJA
@@ -347,9 +349,9 @@ def migrar_datos():
                 
                 codigo = str(row.iloc[0]) if not pd.isna(row.iloc[0]) else f"CJE-{uuid.uuid4().hex[:6]}"
                 med = row.iloc[3]  # MEDIDAS
-                prec = row.iloc[4] # COSTO
-                cant = row.iloc[6] # 01/06/2025 (Stock)
-                obs = row.iloc[11] # OBS
+                prec = row.iloc[4] # COSTO 
+                cant = row.iloc[6] # CANTIDAD
+                obs = row.iloc[10] # OBS
                 
                 sql = "INSERT INTO materiales (codigo_interno, descripcion, categoria_hoja, cantidad_actual, unidad_medida, precio_unitario, proveedor, medida, observaciones) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 values = (

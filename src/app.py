@@ -235,6 +235,7 @@ def main_dashboard():
         if st.session_state.user['rol'] == 'ADMIN':
             menu.append("👥 Gestión de Usuarios")
             menu.append("📈 Reportes")
+            menu.append("🔄 Sincronización Espejo")
         
         menu.append("❓ Ayuda / Tutorial")
             
@@ -256,6 +257,8 @@ def main_dashboard():
         show_user_management()
     elif choice == "📈 Reportes":
         show_reports()
+    elif choice == "🔄 Sincronización Espejo":
+        show_sync_page()
     elif choice == "❓ Ayuda / Tutorial":
         show_help_page()
 
@@ -440,6 +443,64 @@ def show_stats():
                          delta_color="normal" if not dark_mode else "inverse")
             with col3:
                 st.metric("🚀 Ventas Realizadas", df['ventas_completadas'][0])
+
+def show_sync_page():
+    st.title("🔄 Sincronización de Base de Datos")
+    st.markdown("""
+    Esta herramienta permite copiar todos los datos desde **Clever Cloud** (Nube) hacia tu **PC Local** (Espejo).
+    
+    > [!IMPORTANT]
+    > Al sincronizar, la base de datos de tu computadora será sobreescrita con la información actual de la nube.
+    """)
+    
+    from sync_mirror import MirrorSync
+    
+    col1, col2 = st.columns([2, 1])
+    
+    with col1:
+        st.info("💡 La aplicación principal ya está trabajando con Clever Cloud. Usa esto solo para tener un respaldo local actualizado.")
+        
+        if st.button("🚀 Iniciar Sincronización a PC Local"):
+            try:
+                cloud_cfg = st.secrets["mysql"]
+                local_cfg = st.secrets["mysql_local"]
+                
+                with st.status("Sincronizando mundos...", expanded=True) as status:
+                    st.write("🔗 Conectando a ambos servidores...")
+                    syncer = MirrorSync(cloud_cfg, local_cfg)
+                    
+                    st.write("📑 Procesando tablas y transfiriendo datos...")
+                    success, results = syncer.run_sync()
+                    
+                    if success:
+                        status.update(label="✅ Sincronización Completa", state="complete", expanded=False)
+                        st.success("¡Tu PC local ahora es un espejo exacto de la nube!")
+                        
+                        # Mostrar resumen
+                        st.subheader("📊 Datos transferidos:")
+                        for table, count in results.items():
+                            st.write(f"- **{table}**: {count} registros")
+                    else:
+                        status.update(label="❌ Falló la Sincronización", state="error")
+                        st.error(f"Error técnico: {results}")
+            except Exception as e:
+                st.error(f"Error de configuración: {e}")
+    
+    with col2:
+        st.subheader("Estado de Conexión")
+        st.write("🌐 **Maestra:** Clever Cloud (Activa)")
+        st.write("💻 **Espejo:** MySQL Local")
+        
+        if st.button("🔌 Probar Conexiones"):
+            try:
+                # Probar Cloud
+                mysql.connector.connect(**st.secrets["mysql"]).close()
+                st.success("Cloud: OK")
+                # Probar Local
+                mysql.connector.connect(**st.secrets["mysql_local"]).close()
+                st.success("Local: OK")
+            except Exception as e:
+                st.error(f"Error: {e}")
 
 def show_inventory():
     st.title("📦 Consulta de Inventario")
