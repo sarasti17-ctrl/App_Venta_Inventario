@@ -138,17 +138,26 @@ st.markdown(f"""
 # Manejo de conexión a BD
 def get_db_connection():
     try:
+        if "mysql" not in st.secrets:
+            st.error("❌ Error: No se encontró la sección [mysql] en los secretos (Secrets).")
+            return None
+            
         config = st.secrets["mysql"]
         conn = mysql.connector.connect(
             host=config["host"],
             port=config["port"],
             user=config["user"],
             password=config["password"],
-            database=config["database"]
+            database=config["database"],
+            connect_timeout=10
         )
         return conn
     except Error as e:
-        st.error(f"Error de conexión a la base de datos: {e}")
+        host_tried = st.secrets.get("mysql", {}).get("host", "N/A")
+        st.error(f"❌ Error de conexión (Host: {host_tried}): {e}")
+        return None
+    except Exception as e:
+        st.error(f"❌ Error inesperado: {e}")
         return None
 
 # Funciones de Autenticación
@@ -202,8 +211,6 @@ def login_page():
             
             if submit:
                 # Caso especial para desarrollo inicial o validación real
-                # Si es admin/admin123 o vendedor1/vendedor123 (los del setup)
-                # En un paso posterior integraremos validación real de bcrypt
                 user = check_login(username, password)
                 if user:
                     st.session_state.authenticated = True
@@ -211,6 +218,22 @@ def login_page():
                     st.rerun()
                 else:
                     st.error("Usuario o contraseña incorrectos")
+        
+        # Diagnóstico para la nube
+        with st.expander("🛠️ Diagnóstico del Sistema (Soporte)"):
+            st.write(f"**Entorno:** {'Nube' if os.path.exists('/mount/src') else 'Local'}")
+            if "mysql" in st.secrets:
+                host = st.secrets["mysql"]["host"]
+                st.write(f"**Base de Datos (Host):** `{host[:5]}...{host[-5:] if len(host) > 10 else ''}`")
+                if st.button("Probar Conexión Ahora"):
+                    c = get_db_connection()
+                    if c:
+                        st.success("✅ Conexión exitosa a la base de datos")
+                        c.close()
+                    else:
+                        st.error("❌ Falló la conexión")
+            else:
+                st.error("❌ Sección [mysql] NO encontrada en st.secrets")
 
 # Dashboard Principal
 def main_dashboard():
