@@ -5,6 +5,7 @@ streamlit>=1.31.0
 
 # Base de datos
 mysql-connector-python>=8.3.0
+sqlalchemy>=2.0.0
 
 # Manejo de Datos
 pandas>=2.2.0

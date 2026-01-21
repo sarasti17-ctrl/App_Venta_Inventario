@@ -3,6 +3,7 @@ import pandas as pd
 import mysql.connector
 from sqlalchemy import create_engine
 import streamlit as st
+from urllib.parse import quote_plus
 
 class MirrorSync:
     def __init__(self, cloud_config, local_config):
@@ -14,11 +15,15 @@ class MirrorSync:
         try:
             # 1. Crear motores de SQLAlchemy para facilitar el paso de DataFrames
             # Cloud
-            cloud_url = f"mysql+mysqlconnector://{self.cloud_config['user']}:{self.cloud_config['password']}@{self.cloud_config['host']}:{self.cloud_config['port']}/{self.cloud_config['database']}"
+            user_c = quote_plus(str(self.cloud_config['user']))
+            pass_c = quote_plus(str(self.cloud_config['password']))
+            cloud_url = f"mysql+mysqlconnector://{user_c}:{pass_c}@{self.cloud_config['host']}:{self.cloud_config['port']}/{self.cloud_config['database']}"
             cloud_engine = create_engine(cloud_url)
             
             # Local
-            local_url = f"mysql+mysqlconnector://{self.local_config['user']}:{self.local_config['password']}@{self.local_config['host']}:{self.local_config['port']}/{self.local_config['database']}"
+            user_l = quote_plus(str(self.local_config['user']))
+            pass_l = quote_plus(str(self.local_config['password']))
+            local_url = f"mysql+mysqlconnector://{user_l}:{pass_l}@{self.local_config['host']}:{self.local_config['port']}/{self.local_config['database']}"
             local_engine = create_engine(local_url)
             
             tables = ["usuarios", "materiales", "ventas", "ventas_detalle", "log_actividad"]

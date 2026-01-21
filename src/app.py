@@ -335,20 +335,41 @@ def show_reports():
 
     st.divider()
 
-    # 3. Stock Crítico
-    st.subheader("⚠️ Alerta de Stock Crítico")
-    st.write("Materiales con menos de 10 unidades disponibles.")
-    query_critico = """
-        SELECT codigo_interno, descripcion, categoria_hoja, cantidad_actual, unidad_medida 
+    # 3. Materiales de Alto Valor (Top 100)
+    st.subheader("💎 Top 100 Materiales de Mayor Valor")
+    st.write("Lista de materiales con mayor inversión en inventario (Stock x Precio), ordenados de mayor a menor.")
+    query_alto_valor = """
+        SELECT 
+            codigo_interno, 
+            descripcion, 
+            categoria_hoja, 
+            cantidad_actual, 
+            unidad_medida,
+            precio_unitario,
+            (cantidad_actual * precio_unitario) as valor_total
         FROM materiales 
-        WHERE cantidad_actual < 10 AND cantidad_actual > 0
-        ORDER BY cantidad_actual ASC
+        WHERE cantidad_actual > 0
+        ORDER BY valor_total DESC 
+        LIMIT 100
     """
-    df_crit = pd.read_sql(query_critico, conn)
-    if not df_crit.empty:
-        st.dataframe(df_crit, use_container_width=True, hide_index=True)
+    df_valor = pd.read_sql(query_alto_valor, conn)
+    if not df_valor.empty:
+        # Formatear para visualización
+        st.dataframe(
+            df_valor, 
+            use_container_width=True, 
+            hide_index=True,
+            column_config={
+                "codigo_interno": "Código",
+                "descripcion": "Descripción",
+                "categoria_hoja": "Categoría",
+                "cantidad_actual": st.column_config.NumberColumn("Stock", format="%.1f"),
+                "precio_unitario": st.column_config.NumberColumn("Precio U.", format="$%.2f"),
+                "valor_total": st.column_config.NumberColumn("Valor Inventario", format="$%.0f")
+            }
+        )
     else:
-        st.success("No hay materiales con stock crítico actualmente.")
+        st.info("No hay materiales con stock actualmente.")
 
     conn.close()
 
@@ -453,7 +474,20 @@ def show_sync_page():
     > Al sincronizar, la base de datos de tu computadora será sobreescrita con la información actual de la nube.
     """)
     
-    from sync_mirror import MirrorSync
+    # Verificar si estamos en la nube
+    is_cloud = os.path.exists("/mount/src")
+    
+    if is_cloud:
+        st.error("🚫 **Sincronización Deshabilitada en la Nube**")
+        st.warning("Esta herramienta solo puede ejecutarse cuando usas la App **en tu PC local**. Los servidores de la nube no tienen permiso para entrar a tu red privada y escribir en tu base de datos local.")
+        st.info("Para sincronizar, abre una terminal en tu PC y corre: `streamlit run src/app.py`")
+        return
+    
+    try:
+        from sync_mirror import MirrorSync
+    except ImportError:
+        st.error("❌ No se encontró el módulo de sincronización. Asegúrate de que `sqlalchemy` esté instalado.")
+        return
     
     col1, col2 = st.columns([2, 1])
     
@@ -560,9 +594,9 @@ def show_inventory():
                 use_container_width=True, 
                 hide_index=True,
                 column_config={
-                    "cantidad_actual": st.column_config.NumberColumn("Cantidad", format="%.3f"),
+                    "cantidad_actual": st.column_config.NumberColumn("Cantidad", format="%.1f"),
                     "precio_unitario": st.column_config.NumberColumn("Precio U.", format="$%.2f"),
-                    "importe": st.column_config.NumberColumn("Importe Total", format="$%.2f"),
+                    "importe": st.column_config.NumberColumn("Importe Total", format="$%.0f"),
                     "codigo_interno": "Código",
                     "descripcion": "Descripción",
                     "categoria_hoja": "Categoría",
@@ -579,9 +613,9 @@ def show_inventory():
             with t_col1:
                 st.metric("Total Registros", len(df))
             with t_col2:
-                st.metric("Total Cantidad", f"{total_cantidad:,.3f}")
+                st.metric("Total Cantidad", f"{total_cantidad:,.1f}")
             with t_col3:
-                st.metric("Total Importe", f"${total_importe:,.2f}")
+                st.metric("Total Importe", f"${total_importe:,.0f}")
         else:
             st.warning("No se encontraron resultados")
 

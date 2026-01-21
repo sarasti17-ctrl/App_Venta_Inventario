@@ -30,15 +30,25 @@ Si tienes el rol de **ADMIN**, verás opciones adicionales:
 
 * **Gestión de Usuarios**: Crea nuevas cuentas para empleados o cambia contraseñas.
 * **Reportes**: Visualiza gráficas de ventas y tendencias diarias.
-* **Stock Crítico**: Revisa la lista automática de productos con menos de 10 unidades para reabastecimiento.
+* **Top 100 Materiales**: Revisa la lista de los 100 productos con mayor valor económico en el inventario para priorizar su venta.
+* **Sincronización Espejo**: Permite descargar toda la información de la nube a tu PC local (solo funciona en modo local).
 
 ---
 
-## 🎨 4. Personalización y Tips
+## 💻 4. Sincronización Local (Respaldo)
+Para asegurar que tu PC local tenga una copia exacta de los datos de Clever Cloud:
+
+1.  Asegúrate de estar corriendo la App en tu PC (`localhost`).
+2.  Ve a **🔄 Sincronización Espejo**.
+3.  Presiona **🚀 Iniciar Sincronización**. Esto borrará tu base local previa y la reemplazará con los datos frescos de la nube.
+
+---
+
+## 🎨 5. Personalización y Tips
 * **Modo Oscuro**: Activa el switch `🌙 Modo Oscuro` en la barra lateral para trabajar más cómodamente de noche.
 * **Cerrar Sesión**: Siempre cierra tu sesión al terminar tu turno para mantener la seguridad de los datos.
 * **Nueva Venta**: Después de generar un ticket, usa el botón **🔄 Nueva Venta** para limpiar el formulario y empezar de nuevo.
 
 ---
 *Para soporte técnico adicional, contacta al administrador del sistema.*
-*""""""" Jaime Camarena 2026""""""*
+*""""""" Jaime Camarena 2026 """""""*
