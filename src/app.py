@@ -343,6 +343,9 @@ def show_reports():
             codigo_interno, 
             descripcion, 
             categoria_hoja, 
+            medida,
+            marca,
+            color,
             cantidad_actual, 
             unidad_medida,
             precio_unitario,
@@ -363,6 +366,9 @@ def show_reports():
                 "codigo_interno": "Código",
                 "descripcion": "Descripción",
                 "categoria_hoja": "Categoría",
+                "medida": "Medida",
+                "marca": "Marca",
+                "color": "Color",
                 "cantidad_actual": st.column_config.NumberColumn("Stock", format="%.1f"),
                 "precio_unitario": st.column_config.NumberColumn("Precio U.", format="$%.2f"),
                 "valor_total": st.column_config.NumberColumn("Valor Inventario", format="$%.0f")
@@ -554,10 +560,11 @@ def show_inventory():
         # Construir query dinámica
         query = """
             SELECT 
-                id, 
-                codigo_interno, 
                 descripcion, 
                 categoria_hoja, 
+                medida,
+                marca,
+                color,
                 cantidad_actual, 
                 unidad_medida, 
                 precio_unitario,
@@ -597,9 +604,11 @@ def show_inventory():
                     "cantidad_actual": st.column_config.NumberColumn("Cantidad", format="%.1f"),
                     "precio_unitario": st.column_config.NumberColumn("Precio U.", format="$%.2f"),
                     "importe": st.column_config.NumberColumn("Importe Total", format="$%.0f"),
-                    "codigo_interno": "Código",
                     "descripcion": "Descripción",
                     "categoria_hoja": "Categoría",
+                    "medida": "Medida",
+                    "marca": "Marca",
+                    "color": "Color",
                     "unidad_medida": "Unidad"
                 }
             )
