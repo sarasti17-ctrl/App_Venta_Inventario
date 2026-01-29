@@ -36,7 +36,7 @@ class MirrorSync:
             cursor_local.execute("SET FOREIGN_KEY_CHECKS = 0;")
             
             for table in tables:
-                print(f"🔄 Sincronizando tabla: {table}...")
+                print(f"Sincronizando tabla: {table}...")
                 # Leer de Nube
                 df = pd.read_sql(f"SELECT * FROM {table}", cloud_engine)
                 

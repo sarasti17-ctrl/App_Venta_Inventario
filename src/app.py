@@ -9,6 +9,7 @@ import io
 import os
 import plotly.express as px
 import plotly.graph_objects as go
+from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode
 
 # Configuración de la página
 st.set_page_config(
@@ -302,7 +303,23 @@ def show_reports():
         return
 
     # 1. KPIs Rápidos
-    query_stats = "SELECT * FROM v_progreso_liquidacion"
+    query_stats = """
+        SELECT 
+            COUNT(*) AS total_items,
+            SUM(monto_total) AS monto_total,
+            SUM(monto_total) AS monto_recuperado
+        FROM v_progreso_liquidacion
+    """
+    # Nota: v_progreso_liquidacion ya debería estar filtrando, pero recargamos datos para KPIS específicos si es necesario
+    query_stats = """
+        SELECT 
+            COUNT(*) AS total_items,
+            SUM(cantidad_actual * precio_unitario) AS valor_inventario_actual,
+            (SELECT SUM(monto_total) FROM ventas WHERE estado = 'COMPLETADA') AS monto_recuperado,
+            (SELECT COUNT(*) FROM ventas WHERE estado = 'COMPLETADA') AS ventas_completadas
+        FROM materiales
+        WHERE cantidad_actual > 0
+    """
     df_stats = pd.read_sql(query_stats, conn)
     
     if not df_stats.empty:
@@ -478,7 +495,15 @@ def show_stats():
     st.title("Resumen General")
     conn = get_db_connection()
     if conn:
-        query = "SELECT * FROM v_progreso_liquidacion"
+        query = """
+            SELECT 
+                COUNT(*) AS total_items,
+                SUM(cantidad_actual * precio_unitario) AS valor_inventario_actual,
+                (SELECT SUM(monto_total) FROM ventas WHERE estado = 'COMPLETADA') AS monto_recuperado,
+                (SELECT COUNT(*) FROM ventas WHERE estado = 'COMPLETADA') AS ventas_completadas
+            FROM materiales
+            WHERE cantidad_actual > 0
+        """
         df = pd.read_sql(query, conn)
         conn.close()
         
@@ -570,8 +595,8 @@ def show_inventory():
     
     conn = get_db_connection()
     if conn:
-        # Filtros
-        query_cats = "SELECT DISTINCT categoria_hoja FROM materiales"
+        # Filtros base
+        query_cats = "SELECT DISTINCT categoria_hoja FROM materiales WHERE cantidad_actual > 0"
         cats_df = pd.read_sql(query_cats, conn)
         
         col1, col2 = st.columns([1, 2])
@@ -580,23 +605,56 @@ def show_inventory():
         with col2:
             search = st.text_input("Buscar por código o descripción")
         
+        # --- BÚSQUEDA AVANZADA ---
+        with st.expander("🔍 Filtros Avanzados (Marca, Color, Medida, Rangos)"):
+            c1, c2, c3, c4 = st.columns(4)
+            
+            # Obtener listas únicas para los selectores (de forma eficiente)
+            with c1:
+                marcas = pd.read_sql("SELECT DISTINCT marca FROM materiales WHERE marca IS NOT NULL AND marca != '' AND cantidad_actual > 0", conn)
+                marca_sel = st.selectbox("Marca", ["Todas"] + list(marcas['marca']))
+            with c2:
+                colores = pd.read_sql("SELECT DISTINCT color FROM materiales WHERE color IS NOT NULL AND color != '' AND cantidad_actual > 0", conn)
+                color_sel = st.selectbox("Color", ["Todas"] + list(colores['color']))
+            with c3:
+                medidas = pd.read_sql("SELECT DISTINCT medida FROM materiales WHERE medida IS NOT NULL AND medida != '' AND cantidad_actual > 0", conn)
+                medida_sel = st.selectbox("Medida", ["Todas"] + list(medidas['medida']))
+            with c4:
+                propiedades = pd.read_sql("SELECT DISTINCT propiedad FROM materiales WHERE propiedad IS NOT NULL AND propiedad != '' AND cantidad_actual > 0", conn)
+                prop_sel = st.selectbox("Propiedad", ["Todas"] + list(propiedades['propiedad']))
+            
+            st.divider()
+            c_p1, c_p2, c_s1, c_s2 = st.columns(4)
+            with c_p1:
+                p_min = st.number_input("Precio Mín ($)", min_value=0.0, value=0.0, step=10.0)
+            with c_p2:
+                p_max = st.number_input("Precio Máx ($)", min_value=0.0, value=1000000.0, step=10.0)
+            with c_s1:
+                s_min = st.number_input("Stock Mín", min_value=0.0, value=0.0, step=1.0)
+            with c_s2:
+                s_max = st.number_input("Stock Máx", min_value=0.0, value=1000000.0, step=1.0)
+
         # Construir query dinámica
         query = """
             SELECT 
+                id,
+                codigo_interno,
                 descripcion, 
                 categoria_hoja, 
                 medida,
                 marca,
                 color,
+                propiedad,
                 cantidad_actual, 
                 unidad_medida, 
                 precio_unitario,
                 (cantidad_actual * precio_unitario) as importe
             FROM materiales 
-            WHERE 1=1
+            WHERE cantidad_actual > 0
         """
         params = []
         
+        # Aplicar filtros
         if categoria != "Todas":
             query += " AND categoria_hoja = %s"
             params.append(categoria)
@@ -605,6 +663,38 @@ def show_inventory():
             query += " AND (codigo_interno LIKE %s OR descripcion LIKE %s)"
             params.append(f"%{search}%")
             params.append(f"%{search}%")
+
+        if marca_sel != "Todas":
+            query += " AND marca = %s"
+            params.append(marca_sel)
+            
+        if color_sel != "Todas":
+            query += " AND color = %s"
+            params.append(color_sel)
+            
+        if medida_sel != "Todas":
+            query += " AND medida = %s"
+            params.append(medida_sel)
+
+        if prop_sel != "Todas":
+            query += " AND propiedad = %s"
+            params.append(prop_sel)
+
+        # Filtros de rangos
+        if p_min > 0:
+            query += " AND precio_unitario >= %s"
+            params.append(p_min)
+        if p_max < 1000000:
+            query += " AND precio_unitario <= %s"
+            params.append(p_max)
+        if s_min > 0:
+            query += " AND cantidad_actual >= %s"
+            params.append(s_min)
+        if s_max < 1000000:
+            query += " AND cantidad_actual <= %s"
+            params.append(s_max)
+            
+        query += " ORDER BY descripcion ASC"
             
         # Ejecutar usando motor de pandas para visualización
         cursor = conn.cursor(dictionary=True)
@@ -618,22 +708,45 @@ def show_inventory():
             for col in ['cantidad_actual', 'precio_unitario', 'importe']:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
 
-            # Formatear columnas para mejor visualización
-            st.dataframe(
-                df, 
-                use_container_width=True, 
-                hide_index=True,
-                column_config={
-                    "cantidad_actual": st.column_config.NumberColumn("Cantidad", format="%.1f"),
-                    "precio_unitario": st.column_config.NumberColumn("Precio U.", format="$%.2f"),
-                    "importe": st.column_config.NumberColumn("Importe Total", format="$%.0f"),
-                    "descripcion": "Descripción",
-                    "categoria_hoja": "Categoría",
-                    "medida": "Medida",
-                    "marca": "Marca",
-                    "color": "Color",
-                    "unidad_medida": "Unidad"
-                }
+            # --- CONFIGURACIÓN DE AGGRID ---
+            gb = GridOptionsBuilder.from_dataframe(df)
+            gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=20)
+            gb.configure_side_bar() # Agrega filtros laterales también
+            gb.configure_default_column(
+                resizable=True,
+                filter=True,
+                sortable=True,
+                editable=False,
+            )
+            
+            # Formateo de columnas en AgGrid
+            gb.configure_column("id", hide=True)
+            gb.configure_column("codigo_interno", hide=True)
+            gb.configure_column("propiedad", hide=True)
+            
+            gb.configure_column("descripcion", headerName="Descripción", minWidth=300, pinned='left')
+            gb.configure_column("categoria_hoja", headerName="Categoría")
+            gb.configure_column("medida", headerName="Medida")
+            gb.configure_column("marca", headerName="Marca")
+            gb.configure_column("color", headerName="Color")
+            gb.configure_column("cantidad_actual", headerName="Cantidad", type=["numericColumn", "numberColumnFilter"], valueFormatter="x.toLocaleString()")
+            gb.configure_column("unidad_medida", headerName="Unidad")
+            gb.configure_column("precio_unitario", headerName="Precio U.", type=["numericColumn", "numberColumnFilter"], valueFormatter="'$' + x.toLocaleString()")
+            gb.configure_column("importe", headerName="Importe Total", type=["numericColumn", "numberColumnFilter"], valueFormatter="'$' + x.toLocaleString()")
+            
+            gridOptions = gb.build()
+            
+            # Renderizar AgGrid
+            AgGrid(
+                df,
+                gridOptions=gridOptions,
+                data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
+                update_mode=GridUpdateMode.MODEL_CHANGED,
+                fit_columns_on_grid_load=True,
+                theme='alpine' if not dark_mode else 'balham', 
+                enable_enterprise_modules=False,
+                height=500,
+                width='100%'
             )
 
             # Mostrar Totales

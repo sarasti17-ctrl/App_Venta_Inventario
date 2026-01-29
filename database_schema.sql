@@ -212,7 +212,8 @@ SELECT
     SUM(cantidad_actual * precio_unitario) AS valor_inventario_actual,
     (SELECT SUM(monto_total) FROM ventas WHERE estado = 'COMPLETADA') AS monto_recuperado,
     (SELECT COUNT(*) FROM ventas WHERE estado = 'COMPLETADA') AS ventas_completadas
-FROM materiales;
+FROM materiales
+WHERE cantidad_actual > 0;
 
 -- ============================================================================
 -- SP removido temporalmente para rediseño multi-artículo
