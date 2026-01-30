@@ -260,6 +260,8 @@ def main_dashboard():
             menu.append("👥 Gestión de Usuarios")
             menu.append("📈 Reportes")
             menu.append("🔄 Sincronización Espejo")
+            menu.append("📤 Carga Masiva (Excel)")
+            menu.append("✏️ Editar Materiales")
         
         menu.append("❓ Ayuda / Tutorial")
             
@@ -283,6 +285,10 @@ def main_dashboard():
         show_reports()
     elif choice == "🔄 Sincronización Espejo":
         show_sync_page()
+    elif choice == "📤 Carga Masiva (Excel)":
+        show_inventory_upload()
+    elif choice == "✏️ Editar Materiales":
+        show_inventory_edit()
     elif choice == "❓ Ayuda / Tutorial":
         show_help_page()
 
@@ -991,6 +997,260 @@ def show_sales_form():
             if st.button("🔄 Nueva Venta"):
                 st.session_state.last_ticket = None
                 st.rerun()
+
+def generate_internal_code(category):
+    import uuid
+    prefix_map = {
+        'Hulera': 'HUL',
+        'Caja Individual': 'CJ',
+        'Suela Mov': 'SUE',
+        'carga hule': 'CH',
+        'Almacén_MateriaPrima': 'AMP',
+        'suela sin mov': 'SUE-SM',
+        'Etiquetas': 'ETI',
+        'Caja_Embarque': 'CJE',
+        'Inv_TelaVirgenMov': 'TEL',
+        'Inv_TelaVirgen_SinMov': 'TEL-SM',
+        'TelaNoUtilizable': 'TEL-NU',
+        'Agujeta': 'AGU'
+    }
+    prefix = prefix_map.get(category, 'MAT')
+    return f"{prefix}-{uuid.uuid4().hex[:6].upper()}"
+
+def show_inventory_upload():
+    st.title("📤 Carga Masiva de Inventario (Excel)")
+    st.info("Este módulo permite subir nuevos registros. El **Código Interno** se generará automáticamente si se deja vacío.")
+    
+    # Botón para descargar plantilla
+    template_data = {
+        'codigo_interno': [''], # Opcional ahora
+        'descripcion': ['Descripción del material'],
+        'categoria_hoja': ['Hulera'],
+        'propiedad': ['Virgen'],
+        'cantidad_actual': [100.0],
+        'unidad_medida': ['Pares'],
+        'precio_unitario': [50.50],
+        'color': ['Negro'],
+        'medida': ['25-28'],
+        'marca': ['Marca X'],
+        'proveedor': ['Proveedor Y'],
+        'observaciones': ['Sin observaciones']
+    }
+    df_template = pd.DataFrame(template_data)
+    
+    # Usar bytes IO para el Excel
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df_template.to_excel(writer, index=False, sheet_name='Plantilla')
+    processed_data = output.getvalue()
+    
+    st.download_button(
+        label="📥 Descargar Plantilla Excel",
+        data=processed_data,
+        file_name="plantilla_carga_inventario.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        icon="📄"
+    )
+    
+    st.divider()
+    
+    uploaded_file = st.file_uploader("Subir Archivo Excel", type=["xlsx"])
+    
+    if uploaded_file:
+        try:
+            df = pd.read_excel(uploaded_file)
+            st.write("### Previsualización de Datos")
+            st.dataframe(df.head(), use_container_width=True)
+            
+            if st.button("🚀 Procesar y Cargar a Base de Datos"):
+                conn = get_db_connection()
+                if conn:
+                    try:
+                        cursor = conn.cursor()
+                        # Validar columnas requeridas (codigo_interno ya no es obligatorio)
+                        required_cols = ['descripcion', 'categoria_hoja', 'cantidad_actual', 'unidad_medida', 'precio_unitario']
+                        missing = [c for c in required_cols if c not in df.columns]
+                        
+                        if missing:
+                            st.error(f"Faltan columnas obligatorias: {', '.join(missing)}")
+                            return
+
+                        def clean_nan(val, default=None, is_numeric=False):
+                            import math
+                            # Caso 1: Es nulo por pandas (NaN, None, <NA>)
+                            if pd.isna(val):
+                                return 0.0 if is_numeric else default
+                            
+                            if is_numeric:
+                                try:
+                                    f_val = float(val)
+                                    # Caso 2: Es un valor que float() acepta pero es NaN matemáticamente
+                                    if math.isnan(f_val):
+                                        return 0.0
+                                    return f_val
+                                except:
+                                    return 0.0
+                            
+                            # Caso 3: Es texto, asegurar que no sea el string "nan" literal de pandas
+                            s_val = str(val).strip()
+                            if s_val.lower() == 'nan':
+                                return default
+                            return s_val
+
+                        count = 0
+                        for _, row in df.iterrows():
+                            # Generar código si está vacío
+                            codigo = clean_nan(row.get('codigo_interno'), "")
+                            if not codigo or codigo.lower() == 'nan':
+                                codigo = generate_internal_code(clean_nan(row.get('categoria_hoja'), 'Sin Categoria'))
+
+                            query = """
+                                INSERT INTO materiales (
+                                    codigo_interno, descripcion, categoria_hoja, propiedad,
+                                    cantidad_actual, unidad_medida, precio_unitario,
+                                    color, medida, marca, proveedor, observaciones, usuario_creacion_id
+                                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                            """
+                            
+                            vals = (
+                                codigo,
+                                clean_nan(row.get('descripcion'), ''),
+                                clean_nan(row.get('categoria_hoja'), 'Sin Categoría'),
+                                clean_nan(row.get('propiedad')),
+                                clean_nan(row.get('cantidad_actual'), 0, True),
+                                clean_nan(row.get('unidad_medida'), 'Pza'),
+                                clean_nan(row.get('precio_unitario'), 0, True),
+                                clean_nan(row.get('color')),
+                                clean_nan(row.get('medida')),
+                                clean_nan(row.get('marca')),
+                                clean_nan(row.get('proveedor')),
+                                clean_nan(row.get('observaciones')),
+                                st.session_state.user['id']
+                            )
+                            cursor.execute(query, vals)
+                            count += 1
+                        
+                        conn.commit()
+                        st.success(f"✅ Se cargaron {count} registros exitosamente.")
+                        
+                        # Registrar en log
+                        cursor.execute("INSERT INTO log_actividad (usuario_id, accion, tabla_afectada, descripcion) VALUES (%s, %s, %s, %s)",
+                                     (st.session_state.user['id'], 'CARGA_MASIVA', 'materiales', f"Carga masiva de {count} registros via Excel"))
+                        conn.commit()
+                        
+                    except Exception as e:
+                        st.error(f"Error al procesar el archivo: {e}")
+                    finally:
+                        conn.close()
+        except Exception as e:
+            st.error(f"Error al leer el archivo Excel: {e}")
+
+def show_inventory_edit():
+    st.title("✏️ Edición de Materiales")
+    st.info("Busque un material para editar sus detalles.")
+    
+    conn = get_db_connection()
+    if not conn: return
+    
+    search_q = st.text_input("Buscar por Código o Descripción", key="edit_search")
+    
+    if search_q:
+        query = """
+            SELECT * FROM materiales 
+            WHERE (codigo_interno LIKE %s OR descripcion LIKE %s)
+            LIMIT 10
+        """
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute(query, (f"%{search_q}%", f"%{search_q}%"))
+        results = cursor.fetchall()
+        
+        if results:
+            opts = {f"[{r['codigo_interno']}] {r['descripcion']}": r for r in results}
+            selected_label = st.selectbox("Seleccione el material a editar", opts.keys())
+            item = opts[selected_label]
+            
+            st.divider()
+            with st.form("edit_material_form"):
+                col_info, col_values = st.columns(2)
+                with col_info:
+                    st.write(f"**Código Actual:** `{item['codigo_interno']}`")
+                    new_codigo = st.text_input("Cambiar Código (Opcional)", value=item['codigo_interno'])
+                    new_desc = st.text_area("Descripción", value=item['descripcion'])
+                    
+                    # --- CATEGORÍA DINÁMICA ---
+                    cursor.execute("SELECT DISTINCT categoria_hoja FROM materiales WHERE categoria_hoja IS NOT NULL AND categoria_hoja != ''")
+                    existing_cats = [r['categoria_hoja'] for r in cursor.fetchall()]
+                    if item['categoria_hoja'] not in existing_cats:
+                        existing_cats.append(item['categoria_hoja'])
+                    
+                    cat_options = sorted(existing_cats) + ["➕ Agregar nueva categoría..."]
+                    selected_cat = st.selectbox("Categoría", options=cat_options, index=cat_options.index(item['categoria_hoja']) if item['categoria_hoja'] in cat_options else 0)
+                    
+                    if selected_cat == "➕ Agregar nueva categoría...":
+                        new_cat = st.text_input("Escriba la nueva categoría")
+                    else:
+                        new_cat = selected_cat
+
+                    new_prop = st.text_input("Propiedad", value=item['propiedad'] or "")
+                
+                with col_values:
+                    new_cant = st.number_input("Cantidad Actual", value=float(item['cantidad_actual']), format="%.3f")
+                    
+                    # --- UNIDAD DE MEDIDA DINÁMICA ---
+                    cursor.execute("SELECT DISTINCT unidad_medida FROM materiales WHERE unidad_medida IS NOT NULL AND unidad_medida != ''")
+                    existing_units = [r['unidad_medida'] for r in cursor.fetchall()]
+                    if item['unidad_medida'] not in existing_units:
+                        existing_units.append(item['unidad_medida'])
+                    
+                    unit_options = sorted(existing_units) + ["➕ Agregar nueva unidad..."]
+                    selected_unit = st.selectbox("Unidad de Medida", options=unit_options, index=unit_options.index(item['unidad_medida']) if item['unidad_medida'] in unit_options else 0)
+                    
+                    if selected_unit == "➕ Agregar nueva unidad...":
+                        new_unidad = st.text_input("Escriba la nueva unidad")
+                    else:
+                        new_unidad = selected_unit
+
+                    new_precio = st.number_input("Precio Unitario ($)", value=float(item['precio_unitario']), format="%.2f")
+                    new_color = st.text_input("Color", value=item['color'] or "")
+                
+                col_extra1, col_extra2 = st.columns(2)
+                with col_extra1:
+                    new_medida = st.text_input("Medida", value=item['medida'] or "")
+                    new_marca = st.text_input("Marca", value=item['marca'] or "")
+                with col_extra2:
+                    new_prov = st.text_input("Proveedor", value=item['proveedor'] or "")
+                    new_obs = st.text_area("Observaciones", value=item['observaciones'] or "")
+                
+                if st.form_submit_button("💾 Guardar Cambios"):
+                    try:
+                        update_query = """
+                            UPDATE materiales SET 
+                                codigo_interno = %s, descripcion = %s, categoria_hoja = %s, propiedad = %s,
+                                cantidad_actual = %s, unidad_medida = %s, precio_unitario = %s,
+                                color = %s, medida = %s, marca = %s, proveedor = %s, observaciones = %s
+                            WHERE id = %s
+                        """
+                        cursor.execute(update_query, (
+                            new_codigo, new_desc, new_cat, new_prop if new_prop else None,
+                            new_cant, new_unidad, new_precio,
+                            new_color if new_color else None, new_medida if new_medida else None,
+                            new_marca if new_marca else None, new_prov if new_prov else None,
+                            new_obs if new_obs else None, item['id']
+                        ))
+                        conn.commit()
+                        
+                        # Log
+                        cursor.execute("INSERT INTO log_actividad (usuario_id, accion, tabla_afectada, registro_id, descripcion) VALUES (%s, %s, %s, %s, %s)",
+                                     (st.session_state.user['id'], 'MODIFICACION', 'materiales', item['id'], f"Editó material {new_codigo}"))
+                        conn.commit()
+                        
+                        st.success("✅ Cambios guardados exitosamente")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Error al actualizar: {e}")
+        else:
+            st.warning("No se encontraron materiales con ese criterio.")
+    conn.close()
 
 # Punto de entrada
 if __name__ == "__main__":
