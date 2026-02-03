@@ -743,7 +743,7 @@ def show_inventory():
             gridOptions = gb.build()
             
             # Renderizar AgGrid
-            AgGrid(
+            grid_response = AgGrid(
                 df,
                 gridOptions=gridOptions,
                 data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
@@ -755,18 +755,32 @@ def show_inventory():
                 width='100%'
             )
 
+            # Obtener el dataframe filtrado/ordenado
+            df_filtered = grid_response['data']
+
+            # Botón de exportación a CSV
+            if df_filtered is not None and not df_filtered.empty:
+                csv_data = df_filtered.to_csv(index=False, encoding='utf-8-sig').encode('utf-8-sig')
+                st.download_button(
+                    label="📥 Exportar a CSV (Vista Actual)",
+                    data=csv_data,
+                    file_name=f"inventario_sarasti_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                    mime="text/csv",
+                    key="export_csv_btn"
+                )
+
             # Mostrar Totales
             st.divider()
-            total_cantidad = df['cantidad_actual'].sum()
-            total_importe = df['importe'].sum()
             
             t_col1, t_col2, t_col3 = st.columns([1, 1, 1])
             with t_col1:
-                st.metric("Total Registros", len(df))
+                st.metric("Total Registros", len(df_filtered) if df_filtered is not None else 0)
             with t_col2:
-                st.metric("Total Cantidad", f"{total_cantidad:,.1f}")
+                total_cant = df_filtered['cantidad_actual'].sum() if df_filtered is not None else 0
+                st.metric("Total Cantidad", f"{total_cant:,.1f}")
             with t_col3:
-                st.metric("Total Importe", f"${total_importe:,.0f}")
+                total_imp = df_filtered['importe'].sum() if df_filtered is not None else 0
+                st.metric("Total Importe", f"${total_imp:,.0f}")
         else:
             st.warning("No se encontraron resultados")
 
