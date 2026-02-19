@@ -80,7 +80,8 @@ class TicketGenerator:
             pdf.cell(25, 7, str(item['codigo_interno']), 1, 0, 'C')
             pdf.cell(85, 7, desc, 1, 0, 'L')
             pdf.cell(25, 7, f"{float(item['cantidad']):,.3f} {item['unidad_medida']}", 1, 0, 'C')
-            pdf.cell(25, 7, f"${item['precio_unitario']:,.2f}", 1, 0, 'R')
+            precio_u = float(item['precio_unitario'])
+            pdf.cell(25, 7, f"${precio_u:,.2f}", 1, 0, 'R')
             
             line_total = float(item['subtotal'])
             pdf.cell(30, 7, f"${line_total:,.2f}", 1, 1, 'R')
@@ -94,9 +95,9 @@ class TicketGenerator:
         pdf.set_font("Arial", '', 10)
         pdf.cell(30, 8, f"${subtotal_acumulado:,.2f}", 0, 1, 'R')
         
-        descuento_pct = sale_data.get('descuento', 0)
+        descuento_pct = float(sale_data.get('descuento', 0) or 0)
         if descuento_pct > 0:
-            monto_desc = subtotal_acumulado * (descuento_pct / 100)
+            monto_desc = subtotal_acumulado * (descuento_pct / 100.0)
             pdf.set_x(130)
             pdf.set_font("Arial", 'B', 10)
             pdf.cell(40, 8, f"Descuento ({descuento_pct}%):", 0, 0, 'R')

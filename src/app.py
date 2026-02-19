@@ -255,7 +255,7 @@ def main_dashboard():
         
         st.divider()
         
-        menu = ["📊 Dashboard", "🔍 Consulta de Inventario", "💰 Registrar Venta"]
+        menu = ["📊 Dashboard", "🔍 Consulta de Inventario", "💰 Registrar Venta", "📝 Gestión de Ventas"]
         if st.session_state.user['rol'] == 'ADMIN':
             menu.append("👥 Gestión de Usuarios")
             menu.append("📈 Reportes")
@@ -279,6 +279,8 @@ def main_dashboard():
         show_inventory()
     elif choice == "💰 Registrar Venta":
         show_sales_form()
+    elif choice == "📝 Gestión de Ventas":
+        show_sales_management()
     elif choice == "👥 Gestión de Usuarios":
         show_user_management()
     elif choice == "📈 Reportes":
@@ -1030,6 +1032,215 @@ def generate_internal_code(category):
     }
     prefix = prefix_map.get(category, 'MAT')
     return f"{prefix}-{uuid.uuid4().hex[:6].upper()}"
+def show_sales_management():
+    st.title("📝 Gestión y Consulta de Ventas")
+    
+    conn = get_db_connection()
+    if not conn: return
+
+    # 1. Filtros de Búsqueda
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col1:
+        fecha_inicio = st.date_input("Fecha Inicio", datetime.now().replace(day=1))
+    with col2:
+        fecha_fin = st.date_input("Fecha Fin", datetime.now())
+    with col3:
+        filtro_cliente = st.text_input("Buscar por Cliente", placeholder="Nombre del cliente...")
+
+    # 2. Obtención de Datos
+    query_sales = """
+        SELECT 
+            v.id_venta, 
+            v.fecha_venta, 
+            v.cliente, 
+            v.monto_total, 
+            v.forma_pago, 
+            v.estado,
+            u.nombre_completo as vendedor
+        FROM ventas v
+        JOIN usuarios u ON v.responsable_id = u.id
+        WHERE DATE(v.fecha_venta) BETWEEN %s AND %s
+    """
+    params = [fecha_inicio, fecha_fin]
+    if filtro_cliente:
+        query_sales += " AND v.cliente LIKE %s"
+        params.append(f"%{filtro_cliente}%")
+    
+    query_sales += " ORDER BY v.fecha_venta DESC"
+    
+    # Usar cursor para ejecutar query con parámetros y luego pasar a DataFrame
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(query_sales, params)
+    data = cursor.fetchall()
+    df_sales = pd.DataFrame(data)
+    cursor.close()
+
+    if df_sales.empty:
+        st.info("No se encontraron ventas en el rango seleccionado.")
+        conn.close()
+        return
+
+    # Convertir decimales a flotantes para evitar errores de renderizado
+    df_sales['monto_total'] = pd.to_numeric(df_sales['monto_total'], errors='coerce')
+
+    # 3. Visualización con AgGrid
+    st.subheader("📋 Listado de Ventas")
+    
+    # Formatear fecha para AgGrid
+    df_sales['fecha_venta'] = pd.to_datetime(df_sales['fecha_venta']).dt.strftime('%d/%m/%Y %H:%M')
+
+    gb = GridOptionsBuilder.from_dataframe(df_sales)
+    gb.configure_selection('single', use_checkbox=True)
+    gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=15)
+    gb.configure_column("id_venta", headerName="ID", width=70)
+    gb.configure_column("fecha_venta", headerName="Fecha")
+    gb.configure_column("monto_total", headerName="Total", type=["numericColumn"], valueFormatter="'$' + x.toLocaleString()")
+    
+    gridOptions = gb.build()
+    
+    grid_response = AgGrid(
+        df_sales,
+        gridOptions=gridOptions,
+        data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
+        update_mode=GridUpdateMode.SELECTION_CHANGED,
+        fit_columns_on_grid_load=True,
+        theme='alpine' if not dark_mode else 'balham',
+        height=400,
+        width='100%'
+    )
+
+    selected_rows = grid_response['selected_rows']
+    
+    if selected_rows is not None and (isinstance(selected_rows, list) and len(selected_rows) > 0 or isinstance(selected_rows, pd.DataFrame) and not selected_rows.empty):
+        # En nuevas versiones de AgGrid, selected_rows puede ser un DataFrame o lista
+        if isinstance(selected_rows, pd.DataFrame):
+            row = selected_rows.iloc[0]
+        else:
+            row = selected_rows[0]
+            
+        id_venta = int(row['id_venta'])
+        
+        st.divider()
+        col_act1, col_act2, col_act3 = st.columns(3)
+        
+        with col_act1:
+            if st.button("🎫 Visualizar / Reimprimir Ticket", use_container_width=True):
+                # Obtener detalles de la venta
+                cursor = conn.cursor(dictionary=True)
+                cursor.execute("SELECT * FROM ventas WHERE id_venta = %s", (id_venta,))
+                sale_data = cursor.fetchone()
+                
+                cursor.execute("""
+                    SELECT vd.*, m.descripcion, m.codigo_interno, m.unidad_medida 
+                    FROM ventas_detalle vd 
+                    JOIN materiales m ON vd.id_material = m.id 
+                    WHERE vd.id_venta = %s
+                """, (id_venta,))
+                items = cursor.fetchall()
+                
+                # Mapear nombres de llaves para el generador
+                sale_mapped = {
+                    'cliente': sale_data['cliente'],
+                    'telefono': sale_data['telefono_cliente'],
+                    'email': sale_data['email_cliente'],
+                    'forma_pago': sale_data['forma_pago'],
+                    'descuento': sale_data['descuento_global'],
+                    'condiciones': sale_data['condiciones']
+                }
+                
+                try:
+                    generator = TicketGenerator()
+                    pdf_bytes = generator.generate_ticket(sale_mapped, items)
+                    st.download_button(
+                        label="⬇️ Descargar Ticket PDF",
+                        data=pdf_bytes,
+                        file_name=f"Reimpresion_Ticket_{id_venta}.pdf",
+                        mime="application/pdf",
+                        key=f"reprint_{id_venta}"
+                    )
+                except Exception as e:
+                    st.error(f"Error generando ticket: {e}")
+
+        with col_act2:
+            if st.session_state.user['rol'] == 'ADMIN':
+                if st.button("✏️ Editar Datos de Venta", use_container_width=True):
+                    st.session_state.editing_sale = id_venta
+                    st.rerun()
+
+        with col_act3:
+            if st.session_state.user['rol'] == 'ADMIN':
+                if st.button("❌ Cancelar Venta", use_container_width=True):
+                    # Lógica simple de cancelación (marcar estado y devolver stock)
+                    if row['estado'] == 'CANCELADA':
+                        st.warning("Esta venta ya está cancelada.")
+                    else:
+                        try:
+                            cursor = conn.cursor()
+                            conn.start_transaction()
+                            
+                            # 1. Obtener detalles para devolver stock
+                            cursor.execute("SELECT id_material, cantidad FROM ventas_detalle WHERE id_venta = %s", (id_venta,))
+                            details = cursor.fetchall()
+                            for mat_id, qty in details:
+                                cursor.execute("UPDATE materiales SET cantidad_actual = cantidad_actual + %s WHERE id = %s", (qty, mat_id))
+                            
+                            # 2. Cambiar estado
+                            cursor.execute("UPDATE ventas SET estado = 'CANCELADA', monto_total = 0 WHERE id_venta = %s", (id_venta,))
+                            
+                            # 3. Log
+                            cursor.execute("INSERT INTO log_actividad (usuario_id, accion, tabla_afectada, registro_id, descripcion) VALUES (%s, %s, %s, %s, %s)",
+                                         (st.session_state.user['id'], 'CANCELACION', 'ventas', id_venta, f"Canceló venta {id_venta}"))
+                            
+                            conn.commit()
+                            st.success(f"Venta {id_venta} cancelada y stock devuelto.")
+                            st.rerun()
+                        except Exception as e:
+                            conn.rollback()
+                            st.error(f"Error al cancelar: {e}")
+
+    # --- FLUJO DE EDICIÓN ---
+    if 'editing_sale' in st.session_state and st.session_state.editing_sale:
+        id_edit = st.session_state.editing_sale
+        st.divider()
+        st.subheader(f"🛠️ Editando Venta #{id_edit}")
+        
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM ventas WHERE id_venta = %s", (id_edit,))
+        sale = cursor.fetchone()
+        
+        with st.form("edit_sale_form"):
+            c1, c2 = st.columns(2)
+            with c1:
+                e_cliente = st.text_input("Cliente", value=sale['cliente'])
+                e_tel = st.text_input("Teléfono", value=sale['telefono_cliente'] or "")
+            with c2:
+                e_forma = st.selectbox("Forma de Pago", ["EFECTIVO", "TRANSFERENCIA", "TARJETA", "DEVOLUCIÓN", "CREDITO"], 
+                                      index=["EFECTIVO", "TRANSFERENCIA", "TARJETA", "DEVOLUCIÓN", "CREDITO"].index(sale['forma_pago']) if sale['forma_pago'] in ["EFECTIVO", "TRANSFERENCIA", "TARJETA", "DEVOLUCIÓN", "CREDITO"] else 0)
+                e_desc = st.number_input("Descuento %", value=float(sale['descuento_global'] or 0))
+            
+            e_cond = st.text_area("Condiciones", value=sale['condiciones'] or "")
+            
+            col_eb1, col_eb2 = st.columns(2)
+            if col_eb1.form_submit_button("💾 Guardar Cambios"):
+                try:
+                    cursor.execute("""
+                        UPDATE ventas SET 
+                            cliente = %s, telefono_cliente = %s, forma_pago = %s, 
+                            descuento_global = %s, condiciones = %s 
+                        WHERE id_venta = %s
+                    """, (e_cliente, e_tel, e_forma, e_desc, e_cond, id_edit))
+                    conn.commit()
+                    st.success("Venta actualizada")
+                    del st.session_state.editing_sale
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Error: {e}")
+            
+            if col_eb2.form_submit_button("🚫 Cancelar Edición"):
+                del st.session_state.editing_sale
+                st.rerun()
+
+    conn.close()
 
 def show_inventory_upload():
     st.title("📤 Carga Masiva de Inventario (Excel)")
