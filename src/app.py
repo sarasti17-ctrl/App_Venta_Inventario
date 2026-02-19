@@ -162,8 +162,7 @@ def get_db_connection():
         st.error(f"❌ Error inesperado: {e}")
         return None
 
-# Inicialización de CookieManager (debe ser global o inyectado)
-@st.cache_resource
+# Inicialización de CookieManager
 def get_cookie_manager():
     return stc.CookieManager()
 
@@ -198,7 +197,7 @@ def check_auto_login():
         return
 
     # Intentar obtener la cookie de sesión
-    session_cookie = cookie_manager.get(name="sarasti_session")
+    session_cookie = cookie_manager.get(cookie="sarasti_session")
     
     if session_cookie:
         conn = get_db_connection()
@@ -255,8 +254,8 @@ def login_page():
                     if remember_me:
                         # Guardar cookie por 30 días
                         cookie_manager.set(
-                            name="sarasti_session", 
-                            value=username, 
+                            cookie="sarasti_session", 
+                            val=username, 
                             expires_at=datetime.now() + pd.Timedelta(days=30)
                         )
                     st.rerun()
@@ -312,7 +311,7 @@ def main_dashboard():
         
         if st.button("Cerrar Sesión"):
             # Eliminar cookie de sesión
-            cookie_manager.delete(name="sarasti_session")
+            cookie_manager.delete(cookie="sarasti_session")
             st.session_state.authenticated = False
             st.session_state.user = None
             st.rerun()
