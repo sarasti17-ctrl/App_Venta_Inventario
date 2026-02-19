@@ -10,6 +10,7 @@ import os
 import plotly.express as px
 import plotly.graph_objects as go
 from st_aggrid import AgGrid, GridOptionsBuilder, GridUpdateMode, DataReturnMode
+import extra_streamlit_components as stc
 
 # Configuración de la página
 st.set_page_config(
@@ -161,6 +162,13 @@ def get_db_connection():
         st.error(f"❌ Error inesperado: {e}")
         return None
 
+# Inicialización de CookieManager (debe ser global o inyectado)
+@st.cache_resource
+def get_cookie_manager():
+    return stc.CookieManager()
+
+cookie_manager = get_cookie_manager()
+
 # Funciones de Autenticación
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -183,6 +191,32 @@ def check_login(username, password):
         conn.close()
         return user
     return None
+
+def check_auto_login():
+    """Verifica si existe una cookie de sesión válida para auto-login."""
+    if st.session_state.authenticated:
+        return
+
+    # Intentar obtener la cookie de sesión
+    session_cookie = cookie_manager.get(name="sarasti_session")
+    
+    if session_cookie:
+        conn = get_db_connection()
+        if conn:
+            try:
+                cursor = conn.cursor(dictionary=True)
+                # La cookie guardará el username (podría ser un token más complejo, pero por ahora username)
+                query = "SELECT id, username, rol, nombre_completo FROM usuarios WHERE username = %s AND activo = 1"
+                cursor.execute(query, (session_cookie,))
+                user = cursor.fetchone()
+                cursor.close()
+                conn.close()
+                
+                if user:
+                    st.session_state.authenticated = True
+                    st.session_state.user = user
+            except Exception as e:
+                pass
 
 # Inicialización de estado de sesión
 if 'authenticated' not in st.session_state:
@@ -208,6 +242,7 @@ def login_page():
         with st.form("login_form"):
             username = st.text_input("Usuario")
             password = st.text_input("Contraseña", type="password")
+            remember_me = st.checkbox("Recordarme", value=True)
             submit = st.form_submit_button("Iniciar Sesión")
             
             if submit:
@@ -216,6 +251,14 @@ def login_page():
                 if user:
                     st.session_state.authenticated = True
                     st.session_state.user = user
+                    
+                    if remember_me:
+                        # Guardar cookie por 30 días
+                        cookie_manager.set(
+                            name="sarasti_session", 
+                            value=username, 
+                            expires_at=datetime.now() + pd.Timedelta(days=30)
+                        )
                     st.rerun()
                 else:
                     st.error("Usuario o contraseña incorrectos")
@@ -268,6 +311,8 @@ def main_dashboard():
         choice = st.radio("Navegación", menu)
         
         if st.button("Cerrar Sesión"):
+            # Eliminar cookie de sesión
+            cookie_manager.delete(name="sarasti_session")
             st.session_state.authenticated = False
             st.session_state.user = None
             st.rerun()
@@ -1479,6 +1524,8 @@ def show_inventory_edit():
 
 # Punto de entrada
 if __name__ == "__main__":
+    check_auto_login()
+    
     if not st.session_state.authenticated:
         login_page()
     else:
