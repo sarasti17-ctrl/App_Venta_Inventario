@@ -196,17 +196,22 @@ def check_auto_login():
     if st.session_state.authenticated:
         return
 
-    # Intentar obtener la cookie de sesión
-    session_cookie = cookie_manager.get(cookie="sarasti_session")
+    # Usar get_all() que suele ser más reactivo en Streamlit
+    cookies = cookie_manager.get_all()
     
-    if session_cookie:
+    # Si no hay cookies aún, el componente podría estar cargando
+    if not cookies:
+        return
+
+    session_user = cookies.get("sarasti_session")
+    
+    if session_user:
         conn = get_db_connection()
         if conn:
             try:
                 cursor = conn.cursor(dictionary=True)
-                # La cookie guardará el username (podría ser un token más complejo, pero por ahora username)
                 query = "SELECT id, username, rol, nombre_completo FROM usuarios WHERE username = %s AND activo = 1"
-                cursor.execute(query, (session_cookie,))
+                cursor.execute(query, (session_user,))
                 user = cursor.fetchone()
                 cursor.close()
                 conn.close()
@@ -214,7 +219,9 @@ def check_auto_login():
                 if user:
                     st.session_state.authenticated = True
                     st.session_state.user = user
-            except Exception as e:
+                    # Importante: rerun para refrescar la UI con el nuevo estado
+                    st.rerun()
+            except Exception:
                 pass
 
 # Inicialización de estado de sesión
@@ -297,21 +304,28 @@ def main_dashboard():
         
         st.divider()
         
-        menu = ["📊 Dashboard", "🔍 Consulta de Inventario", "💰 Registrar Venta", "📝 Gestión de Ventas"]
-        if st.session_state.user['rol'] == 'ADMIN':
-            menu.append("👥 Gestión de Usuarios")
-            menu.append("📈 Reportes")
-            menu.append("🔄 Sincronización Espejo")
-            menu.append("📤 Carga Masiva (Excel)")
-            menu.append("✏️ Editar Materiales")
+        if st.session_state.user['rol'] == 'CLIENTE':
+            menu = ["🔍 Consulta de Inventario"]
+        else:
+            menu = ["📊 Dashboard", "🔍 Consulta de Inventario", "💰 Registrar Venta", "📝 Gestión de Ventas"]
+            if st.session_state.user['rol'] == 'ADMIN':
+                menu.append("👥 Gestión de Usuarios")
+                menu.append("📈 Reportes")
+                menu.append("🔄 Sincronización Espejo")
+                menu.append("📤 Carga Masiva (Excel)")
+                menu.append("✏️ Editar Materiales")
+                menu.append("📋 Edición Masiva (Tabla)")
         
         menu.append("❓ Ayuda / Tutorial")
             
         choice = st.radio("Navegación", menu)
         
         if st.button("Cerrar Sesión"):
-            # Eliminar cookie de sesión
-            cookie_manager.delete(cookie="sarasti_session")
+            # Eliminar cookie de sesión (con manejo de error si no existe)
+            try:
+                cookie_manager.delete(cookie="sarasti_session")
+            except Exception:
+                pass
             st.session_state.authenticated = False
             st.session_state.user = None
             st.rerun()
@@ -335,6 +349,8 @@ def main_dashboard():
         show_inventory_upload()
     elif choice == "✏️ Editar Materiales":
         show_inventory_edit()
+    elif choice == "📋 Edición Masiva (Tabla)":
+        show_inventory_bulk_edit()
     elif choice == "❓ Ayuda / Tutorial":
         show_help_page()
 
@@ -520,7 +536,7 @@ def show_user_management():
             st.subheader("Datos del Nuevo Usuario")
             u_name = st.text_input("Username")
             u_full = st.text_input("Nombre Completo")
-            u_rol = st.selectbox("Rol", ["VENDEDOR", "ADMIN"])
+            u_rol = st.selectbox("Rol", ["VENDEDOR", "ADMIN", "CLIENTE"])
             u_pass = st.text_input("Contraseña Inicial", type="password")
             
             if st.form_submit_button("Guardar Usuario"):
@@ -1519,6 +1535,113 @@ def show_inventory_edit():
                         st.error(f"Error al actualizar: {e}")
         else:
             st.warning("No se encontraron materiales con ese criterio.")
+    conn.close()
+
+def show_inventory_bulk_edit():
+    st.title("📋 Edición Masiva de Inventario")
+    st.markdown("""
+    Esta herramienta permite editar múltiples materiales al mismo tiempo usando una tabla interactiva.
+    > [!TIP]
+    > Puedes copiar y pegar desde Excel directamente en esta tabla. No olvides hacer clic en **Guardar Cambios** al finalizar.
+    """)
+    
+    conn = get_db_connection()
+    if not conn: return
+    
+    # Filtros para no cargar todo el inventario de golpe si es muy grande
+    col1, col2 = st.columns(2)
+    with col1:
+        cursor = conn.cursor()
+        cursor.execute("SELECT DISTINCT categoria_hoja FROM materiales WHERE categoria_hoja IS NOT NULL")
+        cats = [r[0] for r in cursor.fetchall()]
+        cat_filter = st.selectbox("Filtrar por Categoría", ["Todas"] + sorted(cats))
+    with col2:
+        search_filter = st.text_input("Buscar por descripción/código", placeholder="Escribe para buscar...")
+
+    query = "SELECT * FROM materiales WHERE 1=1"
+    params = []
+    
+    if cat_filter != "Todas":
+        query += " AND categoria_hoja = %s"
+        params.append(cat_filter)
+    if search_filter:
+        query += " AND (descripcion LIKE %s OR codigo_interno LIKE %s)"
+        params.extend([f"%{search_filter}%", f"%{search_filter}%"])
+    
+    query += " ORDER BY id DESC LIMIT 500" # Limitar para rendimiento
+    
+    df_origin = pd.read_sql(query, conn, params=params)
+    
+    if not df_origin.empty:
+        # Configurar el editor de datos
+        edited_df = st.data_editor(
+            df_origin,
+            use_container_width=True,
+            hide_index=True,
+            num_rows="dynamic",
+            disabled=["id", "fecha_creacion", "fecha_modificacion"],
+            column_config={
+                "id": None, # Ocultar ID
+                "codigo_interno": st.column_config.TextColumn("Código", width="small", required=True),
+                "descripcion": st.column_config.TextColumn("Descripción", width="large", required=True),
+                "precio_unitario": st.column_config.NumberColumn("Precio ($)", format="$%.2f", min_value=0),
+                "cantidad_actual": st.column_config.NumberColumn("Stock", format="%.3f"),
+                "categoria_hoja": "Categoría",
+                "unidad_medida": "Unidad",
+                "fecha_creacion": None,
+                "fecha_modificacion": None
+            },
+            key="bulk_editor"
+        )
+        
+        # Verificar cambios
+        if st.button("💾 Guardar Todos los Cambios"):
+            changes = st.session_state.bulk_editor
+            
+            # Solo proceder si hay cambios detectados por Streamlit
+            if changes['edited_rows'] or changes['added_rows'] or changes['deleted_rows']:
+                cursor = conn.cursor()
+                try:
+                    if not conn.in_transaction:
+                        conn.start_transaction()
+                    
+                    # 1. Procesar Ediciones
+                    for idx, row_changes in changes['edited_rows'].items():
+                        # Asegurar que el ID sea un tipo nativo de Python
+                        val_id = df_origin.iloc[int(idx)]['id']
+                        real_id = val_id.item() if hasattr(val_id, 'item') else val_id
+                        
+                        # Construir query dinámica para los campos cambiados
+                        set_clause = ", ".join([f"{k} = %s" for k in row_changes.keys()])
+                        # Convertir valores de numpy a nativos (si aplica)
+                        vals = [v.item() if hasattr(v, 'item') else v for v in row_changes.values()] + [real_id]
+                        cursor.execute(f"UPDATE materiales SET {set_clause} WHERE id = %s", vals)
+                    
+                    # 2. Procesar Adiciones
+                    for row in changes['added_rows']:
+                        cols = ", ".join(row.keys())
+                        placeholders = ", ".join(["%s"] * len(row))
+                        # Convertir valores a nativos
+                        vals = [v.item() if hasattr(v, 'item') else v for v in row.values()]
+                        cursor.execute(f"INSERT INTO materiales ({cols}) VALUES ({placeholders})", vals)
+                    
+                    # 3. Procesar Eliminaciones
+                    for idx in changes['deleted_rows']:
+                        val_id = df_origin.iloc[int(idx)]['id']
+                        real_id = val_id.item() if hasattr(val_id, 'item') else val_id
+                        cursor.execute("DELETE FROM materiales WHERE id = %s", (real_id,))
+                    
+                    conn.commit()
+                    st.success(f"✅ Se han procesado los cambios correctamente.")
+                    st.rerun()
+                except Exception as e:
+                    conn.rollback()
+                    st.error(f"❌ Error al guardar cambios masivos: {e}")
+            else:
+                st.info("No se detectaron cambios pendientes en la tabla.")
+    else:
+        st.warning("No se encontraron materiales con los filtros aplicados.")
+    
     conn.close()
 
 # Punto de entrada
