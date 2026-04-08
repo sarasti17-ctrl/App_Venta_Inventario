@@ -775,6 +775,11 @@ def show_inventory():
             # Convertir decimales a flotantes para evitar errores de renderizado
             for col in ['cantidad_actual', 'precio_unitario', 'importe']:
                 df[col] = pd.to_numeric(df[col], errors='coerce')
+                
+            # WORKAROUND: Cast string/object columns to category to fix Streamlit-AgGrid 'LargeUtf8' arrow serialization error
+            # This generates string DictionaryTypes instead of LargeUtf8 which the frontend ArrowTable.js can decode.
+            for col in df.select_dtypes(include=['object', 'string']).columns:
+                df[col] = df[col].astype('category')
 
             # --- CONFIGURACIÓN DE AGGRID ---
             gb = GridOptionsBuilder.from_dataframe(df)
@@ -1142,6 +1147,10 @@ def show_sales_management():
 
     # Convertir decimales a flotantes para evitar errores de renderizado
     df_sales['monto_total'] = pd.to_numeric(df_sales['monto_total'], errors='coerce')
+
+    # WORKAROUND: Cast string/object columns to category to fix Streamlit-AgGrid 'LargeUtf8' arrow serialization error
+    for col in df_sales.select_dtypes(include=['object', 'string']).columns:
+        df_sales[col] = df_sales[col].astype('category')
 
     # 3. Visualización con AgGrid
     st.subheader("📋 Listado de Ventas")
