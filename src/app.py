@@ -791,45 +791,40 @@ def show_inventory():
                 sortable=True,
                 editable=False,
             )
+            # Configuration for native dataframe
+            # Formateamos DataFrame nativo
+            df_display = df.copy()
+            # Quitamos columnas ocultas de visualización (opcional) pero mantenemos en data export
+            cols_to_drop = ['id', 'propiedad']
+            df_display_clean = df_display.drop(columns=[c for c in cols_to_drop if c in df_display.columns])
             
-            # Formateo de columnas en AgGrid
-            gb.configure_column("id", hide=True)
-            gb.configure_column("codigo_interno", hide=True)
-            gb.configure_column("propiedad", hide=True)
-            
-            gb.configure_column("descripcion", headerName="Descripción", minWidth=300, pinned='left')
-            gb.configure_column("categoria_hoja", headerName="Categoría")
-            gb.configure_column("medida", headerName="Medida")
-            gb.configure_column("marca", headerName="Marca")
-            gb.configure_column("color", headerName="Color")
-            gb.configure_column("cantidad_actual", headerName="Cantidad", type=["numericColumn", "numberColumnFilter"], valueFormatter="x.toLocaleString()")
-            gb.configure_column("unidad_medida", headerName="Unidad")
-            gb.configure_column("precio_unitario", headerName="Precio U.", type=["numericColumn", "numberColumnFilter"], valueFormatter="'$' + x.toLocaleString()")
-            gb.configure_column("importe", headerName="Importe Total", type=["numericColumn", "numberColumnFilter"], valueFormatter="'$' + x.toLocaleString()")
-            
-            gridOptions = gb.build()
-            
-            # Renderizar AgGrid
-            grid_response = AgGrid(
-                df,
-                gridOptions=gridOptions,
-                data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
-                update_mode=GridUpdateMode.MODEL_CHANGED,
-                fit_columns_on_grid_load=True,
-                theme='alpine' if not dark_mode else 'balham', 
-                enable_enterprise_modules=False,
+            st.dataframe(
+                df_display_clean,
+                use_container_width=True,
+                hide_index=True,
                 height=500,
-                width='100%'
+                column_config={
+                    "codigo_interno": None,  # Si quieres ocultarlo de la vista
+                    "descripcion": st.column_config.TextColumn("Descripción", width="large"),
+                    "categoria_hoja": "Categoría",
+                    "medida": "Medida",
+                    "marca": "Marca",
+                    "color": "Color",
+                    "cantidad_actual": st.column_config.NumberColumn("Cantidad", format="%.2f"),
+                    "unidad_medida": "Unidad",
+                    "precio_unitario": st.column_config.NumberColumn("Precio U.", format="$%.2f"),
+                    "importe": st.column_config.NumberColumn("Importe Total", format="$%.2f")
+                }
             )
 
-            # Obtener el dataframe filtrado/ordenado
-            df_filtered = grid_response['data']
+            # Obtener el dataframe filtrado/ordenado (En la versión nueva usamos el DataFrame original 'df', dado que los componentes filtran por texto)
+            df_filtered = df
 
             # Botón de exportación a CSV
             if df_filtered is not None and not df_filtered.empty:
                 csv_data = df_filtered.to_csv(index=False, encoding='utf-8-sig').encode('utf-8-sig')
                 st.download_button(
-                    label="📥 Exportar a CSV (Vista Actual)",
+                    label="📥 Exportar a CSV (Toda la Selección)",
                     data=csv_data,
                     file_name=f"inventario_sarasti_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
                     mime="text/csv",
@@ -1158,35 +1153,25 @@ def show_sales_management():
     # Formatear fecha para AgGrid
     df_sales['fecha_venta'] = pd.to_datetime(df_sales['fecha_venta']).dt.strftime('%d/%m/%Y %H:%M')
 
-    gb = GridOptionsBuilder.from_dataframe(df_sales)
-    gb.configure_selection('single', use_checkbox=True)
-    gb.configure_pagination(paginationAutoPageSize=False, paginationPageSize=15)
-    gb.configure_column("id_venta", headerName="ID", width=70)
-    gb.configure_column("fecha_venta", headerName="Fecha")
-    gb.configure_column("monto_total", headerName="Total", type=["numericColumn"], valueFormatter="'$' + x.toLocaleString()")
-    
-    gridOptions = gb.build()
-    
-    grid_response = AgGrid(
+    # Reemplazamos AgGrid con st.dataframe utilizando el soporte de selección de filas nativo
+    event = st.dataframe(
         df_sales,
-        gridOptions=gridOptions,
-        data_return_mode=DataReturnMode.FILTERED_AND_SORTED,
-        update_mode=GridUpdateMode.SELECTION_CHANGED,
-        fit_columns_on_grid_load=True,
-        theme='alpine' if not dark_mode else 'balham',
+        use_container_width=True,
+        hide_index=True,
+        on_select="rerun",
+        selection_mode="single-row",
         height=400,
-        width='100%'
+        column_config={
+            "id_venta": st.column_config.NumberColumn("ID", format="%d"),
+            "fecha_venta": "Fecha",
+            "monto_total": st.column_config.NumberColumn("Total", format="$%.2f")
+        }
     )
 
-    selected_rows = grid_response['selected_rows']
+    selected_rows = event.selection.rows
     
-    if selected_rows is not None and (isinstance(selected_rows, list) and len(selected_rows) > 0 or isinstance(selected_rows, pd.DataFrame) and not selected_rows.empty):
-        # En nuevas versiones de AgGrid, selected_rows puede ser un DataFrame o lista
-        if isinstance(selected_rows, pd.DataFrame):
-            row = selected_rows.iloc[0]
-        else:
-            row = selected_rows[0]
-            
+    if selected_rows:
+        row = df_sales.iloc[selected_rows[0]]
         id_venta = int(row['id_venta'])
         
         st.divider()
